@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: kaluana
+      POSTGRES_USER: developer-kaluana
+      POSTGRES_PASSWORD: FyaOA3waDzDpq74dGJ2iXo/9E8ziPIZRMGtN3o5+cSQ=
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U developer-kaluana -d kaluana"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/kaluana
+      DB_USER: developer-kaluana
+      DB_PASSWORD: FyaOA3waDzDpq74dGJ2iXo/9E8ziPIZRMGtN3o5+cSQ=
+      JWT_SECRET: ${JWT_SECRET:f59S6j3Bh4fJpRrB62C5aVecE8Wqi6uv1XiaUJ2ukOM=}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-net
+      - app-net
+
+  # frontend:
+  #   build: ../frontend-tdah-app
+  #   environment:
+  #     VITE_API_BASE_URL: http://localhost:8080
+  #   ports:
+  #     - "5173:80"
+  #   networks:
+  #     - app-net
+
+networks:
+  backend-net:
+    internal: true
+  app-net:
+
+volumes:
+  pgdata:

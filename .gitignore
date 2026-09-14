@@ -1,0 +1,10 @@
+target/
+.mvn/
+!.mvn/wrapper/maven-wrapper.properties
+*.iml
+.idea/
+.vscode/
+.DS_Store
+.env
+*.log
+hs_err_pid*
