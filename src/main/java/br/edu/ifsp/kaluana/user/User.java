@@ -41,7 +41,7 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
     protected User() {
@@ -62,7 +62,7 @@ public class User {
        this.updatedAt = now;
     }
 
-    @PrePersist
+    @PreUpdate
     void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }
