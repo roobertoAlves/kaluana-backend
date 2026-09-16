@@ -1,16 +1,28 @@
 services:
   db:
     image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: kaluana
-      POSTGRES_USER: developer-kaluana
-      POSTGRES_PASSWORD: FyaOA3waDzDpq74dGJ2iXo/9E8ziPIZRMGtN3o5+cSQ=
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U developer-kaluana -d kaluana"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d kaluana"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -18,13 +30,18 @@ services:
   backend:
     build: .
     environment:
-      DB_URL: jdbc:postgresql://db:5432/kaluana
-      DB_USER: developer-kaluana
-      DB_PASSWORD: FyaOA3waDzDpq74dGJ2iXo/9E8ziPIZRMGtN3o5+cSQ=
-      JWT_SECRET: ${JWT_SECRET:f59S6j3Bh4fJpRrB62C5aVecE8Wqi6uv1XiaUJ2ukOM=}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8080:8080"
@@ -33,7 +50,7 @@ services:
       - app-net
 
   # frontend:
-  #   build: ../frontend-tdah-app
+  #   build: ../frontend-kaluana-app
   #   environment:
   #     VITE_API_BASE_URL: http://localhost:8080
   #   ports:
@@ -43,7 +60,6 @@ services:
 
 networks:
   backend-net:
-    internal: true
   app-net:
 
 volumes:

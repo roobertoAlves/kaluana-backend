@@ -4,16 +4,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.catalina.util.RateLimiter;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -25,10 +21,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "api/auth/register/responsible"
     );
 
-    private static final int MAX_ATTEMPS = 10;
-    private static final long WINDOW_MILLIS = 5* 60 * 1000L;
 
-    private final ConcurrentHashMap<String, CopyOnWriteArrayList<Long>> attemptsByKey = new ConcurrentHashMap<>();
+    private final RedisRateLimiter rateLimiter;
+
+    public RateLimitFilter(RedisRateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -38,18 +36,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        if(!LIMITED_PATHS.contains(path)) {
+        if (!LIMITED_PATHS.contains(path)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String key = clientIp(request) + ":" + path;
-        long now = Instant.now().toEpochMilli();
-        CopyOnWriteArrayList<Long> attempts = attemptsByKey.computeIfAbsent(key, ignored -> new CopyOnWriteArrayList<>());
-        attempts.removeIf(timestamp -> now - timestamp > WINDOW_MILLIS);
+        String key = "rate-limit:" + clientIp(request) + ":" + path;
 
-        if(attempts.size() >= MAX_ATTEMPS) {
-
+        if (!rateLimiter.tryConsume(key)) {
             response.setStatus(429);
             response.setContentType("application/json");
             response.getWriter().write(
@@ -57,13 +51,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        attempts.add(now);
         filterChain.doFilter(request, response);
     }
 
     private String clientIp(HttpServletRequest request) {
-        String forwarded =  request.getHeader("X-Forwarded-For");
-        if(forwarded != null && !forwarded.isBlank()) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
             return forwarded.split(",")[0].trim();
         }
         return request.getRemoteAddr();

@@ -8,3 +8,6 @@ target/
 .env
 *.log
 hs_err_pid*
+.env.dev
+.env.homolog
+.env.prod
