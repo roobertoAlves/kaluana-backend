@@ -1,9 +1,9 @@
 package br.edu.ifsp.kaluana.controller;
 
-import br.edu.ifsp.kaluana.dto.LoginRequest;
+import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
 import br.edu.ifsp.kaluana.service.PairingService;
-import br.edu.ifsp.kaluana.dto.GenerateCodeResponse;
-import br.edu.ifsp.kaluana.dto.ValidateCodeRequest;
+import br.edu.ifsp.kaluana.dto.GenerateCodeResponseDTO;
+import br.edu.ifsp.kaluana.dto.ValidateCodeRequestDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,13 +26,13 @@ public class PairingController {
     }
 
     @PostMapping("/validate-code")
-    public ResponseEntity<LoginRequest.ValidateCodeResponse> validateCode(@Valid @RequestBody ValidateCodeRequest request) {
+    public ResponseEntity<LoginRequestDTO.ValidateCodeResponse> validateCode(@Valid @RequestBody ValidateCodeRequestDTO request) {
         return ResponseEntity.ok(pairingService.validateCode(request.code()));
     }
 
     @PostMapping("/generate-code")
     @PreAuthorize("hasRole('PRIMARY')")
-    public ResponseEntity<GenerateCodeResponse> generateCode(Authentication authentication) {
+    public ResponseEntity<GenerateCodeResponseDTO> generateCode(Authentication authentication) {
         UUID primaryUserId = (UUID) authentication.getPrincipal();
         return ResponseEntity.ok(pairingService.generateCode(primaryUserId));
     }

@@ -1,11 +1,11 @@
 package br.edu.ifsp.kaluana.service;
 
-import br.edu.ifsp.kaluana.dto.LoginRequest;
+import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
 import br.edu.ifsp.kaluana.model.PairingCode;
 import br.edu.ifsp.kaluana.repository.PairingCodeRepository;
 import br.edu.ifsp.kaluana.model.ResponsibleLink;
 import br.edu.ifsp.kaluana.repository.ResponsibleLinkRepository;
-import br.edu.ifsp.kaluana.dto.GenerateCodeResponse;
+import br.edu.ifsp.kaluana.dto.GenerateCodeResponseDTO;
 import br.edu.ifsp.kaluana.model.User;
 import br.edu.ifsp.kaluana.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,18 +43,18 @@ public class PairingService {
     }
 
     @Transactional
-    public GenerateCodeResponse generateCode(UUID primaryUserId) {
+    public GenerateCodeResponseDTO generateCode(UUID primaryUserId) {
         String code = generateUniqueCode();
         OffsetDateTime expiresAt = OffsetDateTime.now().plusMinutes(codeExpirationMinutes);
         pairingCodeRepository.save(new PairingCode(code, primaryUserId, expiresAt));
-        return new GenerateCodeResponse(code, expiresAt);
+        return new GenerateCodeResponseDTO(code, expiresAt);
     }
 
     @Transactional(readOnly = true)
-    public LoginRequest.ValidateCodeResponse validateCode(String code) {
+    public LoginRequestDTO.ValidateCodeResponse validateCode(String code) {
         PairingCode pairingCode = findValidCode(code);
         User primaryUser = findUser(pairingCode.getPrimaryUserId());
-        return new LoginRequest.ValidateCodeResponse(true, primaryUser.getName());
+        return new LoginRequestDTO.ValidateCodeResponse(true, primaryUser.getName());
     }
 
     /**

@@ -1,10 +1,10 @@
 package br.edu.ifsp.kaluana.service;
 
-import br.edu.ifsp.kaluana.dto.AuthResponse;
-import br.edu.ifsp.kaluana.dto.LoginRequest;
-import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequest;
-import br.edu.ifsp.kaluana.dto.RegisterResponsibleRequest;
-import br.edu.ifsp.kaluana.dto.UserResponse;
+import br.edu.ifsp.kaluana.dto.AuthResponseDTO;
+import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
+import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequestDTO;
+import br.edu.ifsp.kaluana.dto.RegisterResponsibleRequestDTO;
+import br.edu.ifsp.kaluana.dto.UserResponseDTO;
 import br.edu.ifsp.kaluana.model.User;
 import br.edu.ifsp.kaluana.model.UserRole;
 import br.edu.ifsp.kaluana.repository.UserRepository;
@@ -37,7 +37,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse registerPrimary(RegisterPrimaryRequest request) {
+    public AuthResponseDTO registerPrimary(RegisterPrimaryRequestDTO request) {
         garantirEmailDisponivel(request.email());
 
         User user = new User(
@@ -51,7 +51,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse registerResponsible(RegisterResponsibleRequest request) {
+    public AuthResponseDTO registerResponsible(RegisterResponsibleRequestDTO request) {
         garantirEmailDisponivel(request.email());
 
         // Revalida e consome o código dentro desta mesma transação: se algo
@@ -71,7 +71,7 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByEmailIgnoreCase(request.email().trim())
                 .orElseThrow(this::credenciaisInvalidas);
 
@@ -93,8 +93,8 @@ public class AuthService {
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
     }
 
-    private AuthResponse gerarResposta(User user) {
+    private AuthResponseDTO gerarResposta(User user) {
         String token = jwtService.generateAccessToken(user.getId(), user.getRole().name());
-        return new AuthResponse(token, UserResponse.from(user));
+        return new AuthResponseDTO(token, UserResponseDTO.from(user));
     }
 }
