@@ -1,10 +1,10 @@
 package br.edu.ifsp.kaluana.controller;
 
 import br.edu.ifsp.kaluana.service.AuthService;
-import br.edu.ifsp.kaluana.dto.AuthResponse;
-import br.edu.ifsp.kaluana.dto.LoginRequest;
-import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequest;
-import br.edu.ifsp.kaluana.dto.RegisterResponsibleRequest;
+import br.edu.ifsp.kaluana.dto.AuthResponseDTO;
+import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
+import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequestDTO;
+import br.edu.ifsp.kaluana.dto.RegisterResponsibleRequestDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,17 +23,17 @@ public class AuthController {
     }
 
     @PostMapping("/register/primary")
-    public ResponseEntity<AuthResponse> registerPrimary(@Valid @RequestBody RegisterPrimaryRequest request){
+    public ResponseEntity<AuthResponseDTO> registerPrimary(@Valid @RequestBody RegisterPrimaryRequestDTO request){
        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerPrimary(request));
     }
 
     @PostMapping("/register/responsible")
-    public ResponseEntity<AuthResponse> registerResponsible(@Valid @RequestBody RegisterResponsibleRequest request){
+    public ResponseEntity<AuthResponseDTO> registerResponsible(@Valid @RequestBody RegisterResponsibleRequestDTO request){
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerResponsible(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request){
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request){
         return ResponseEntity.ok(authService.login(request));
     }
 }

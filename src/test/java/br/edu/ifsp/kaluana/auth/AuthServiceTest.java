@@ -1,6 +1,6 @@
 package br.edu.ifsp.kaluana.auth;
-import br.edu.ifsp.kaluana.dto.AuthResponse;
-import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequest;
+import br.edu.ifsp.kaluana.dto.AuthResponseDTO;
+import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequestDTO;
 import br.edu.ifsp.kaluana.model.UserRole;
 import br.edu.ifsp.kaluana.repository.UserRepository;
 import br.edu.ifsp.kaluana.service.AuthService;
@@ -37,13 +37,13 @@ class AuthServiceTest {
     @Test
     void deveCriarContaPrimariaQuandoEmailDisponivel() {
         AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder , jwtService);
-        RegisterPrimaryRequest request = new RegisterPrimaryRequest("Maria", "maria@example.com", "senhaSegura1");
+        RegisterPrimaryRequestDTO request = new RegisterPrimaryRequestDTO("Maria", "maria@example.com", "senhaSegura1");
 
         when(userRepository.existsByEmailIgnoreCase("maria@example.com")).thenReturn(false);
         when(passwordEncoder.encode("senhaSegura1")).thenReturn("hash-fake");
         when(jwtService.generateAccessToken(any(), anyString())).thenReturn("token-fake");
 
-        AuthResponse response = authService.registerPrimary(request);
+        AuthResponseDTO response = authService.registerPrimary(request);
 
         assertThat(response.accessToken()).isEqualTo("token-fake");
         assertThat(response.user().name()).isEqualTo("Maria");
@@ -53,7 +53,7 @@ class AuthServiceTest {
     @Test
     void deveRecusarCadastroComEmailJaExistente() {
         AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder , jwtService);
-        RegisterPrimaryRequest request = new RegisterPrimaryRequest("Maria", "maria@example.com", "senhaSegura1");
+        RegisterPrimaryRequestDTO request = new RegisterPrimaryRequestDTO("Maria", "maria@example.com", "senhaSegura1");
 
         when(userRepository.existsByEmailIgnoreCase("maria@example.com")).thenReturn(true);
 
