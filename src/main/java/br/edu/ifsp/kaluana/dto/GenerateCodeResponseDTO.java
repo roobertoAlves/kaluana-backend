@@ -2,7 +2,7 @@ package br.edu.ifsp.kaluana.dto;
 
 import java.time.OffsetDateTime;
 
-public record GenerateCodeResponse(
+public record GenerateCodeResponseDTO(
         String code,
         OffsetDateTime expiresAt
 ) {

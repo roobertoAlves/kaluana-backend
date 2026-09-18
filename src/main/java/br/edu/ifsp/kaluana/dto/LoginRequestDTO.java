@@ -2,7 +2,7 @@ package br.edu.ifsp.kaluana.dto;
 
 import  jakarta.validation.constraints.NotBlank;
 
-public record LoginRequest(
+public record LoginRequestDTO(
 
     @NotBlank(message = "Informe o e-mail.")
     String email,

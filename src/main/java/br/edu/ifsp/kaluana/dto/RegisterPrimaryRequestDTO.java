@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 
-public  record RegisterPrimaryRequest(
+public  record RegisterPrimaryRequestDTO(
 
         @NotBlank(message = "Informe o nome.")
         String name,
