@@ -1,0 +1,16 @@
+{
+	"name": "Kaluana-Homolog",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "https://homolog-api.kaluana.com.br",
+			"enabled": true
+		},
+		{
+			"key": "token",
+			"value": "",
+			"enabled": true
+		}
+	],
+	"id": "kaluana-homolog-env"
+}

@@ -1,0 +1,16 @@
+{
+	"name": "Kaluana-Prod",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "https://api.kaluana.com.br",
+			"enabled": true
+		},
+		{
+			"key": "token",
+			"value": "",
+			"enabled": true
+		}
+	],
+	"id": "kaluana-prod-env"
+}

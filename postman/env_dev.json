@@ -1,0 +1,16 @@
+{
+	"name": "Kaluana-Dev",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"enabled": true
+		},
+		{
+			"key": "token",
+			"value": "",
+			"enabled": true
+		}
+	],
+	"id": "kaluana-dev-env"
+}
