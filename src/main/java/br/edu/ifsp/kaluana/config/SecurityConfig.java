@@ -31,9 +31,9 @@ public class SecurityConfig {
             JwtAuthenticationFilter jwetAuthenticationFilter,
             RateLimitFilter rateLimitFilter,
             @Value("${app.cors.allowed-origin}") String allowedOrigin){
-                this.jwetAuthenticationFilter = jwetAuthenticationFilter;
-                this.rateLimitFilter = rateLimitFilter;
-                this.allowedOrigin = allowedOrigin;
+        this.jwetAuthenticationFilter = jwetAuthenticationFilter;
+        this.rateLimitFilter = rateLimitFilter;
+        this.allowedOrigin = allowedOrigin;
     }
 
     @Bean
@@ -62,6 +62,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedOrigins(List.of(allowedOrigin));
+        corsConfiguration.setAllowedOriginPatterns(List.of("*"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
