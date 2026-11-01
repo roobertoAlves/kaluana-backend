@@ -38,6 +38,12 @@ public class User {
     @Column(name = "support_type", length = 20)
     private String typeSupport;
 
+    @Column(length = 30)
+    private String nickname;
+
+    @Column(name = "avatar_color", length = 7)
+    private String avatarColor;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -90,5 +96,17 @@ public class User {
     }
     public OffsetDateTime getCreatedAt() {
         return createdAt;
+    }
+    public String getNickname() {
+        return nickname;
+    }
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    public void updateProfile(String name, String nickname, String avatarColor) {
+        this.name = name;
+        this.nickname = nickname;
+        this.avatarColor = avatarColor;
     }
 }
