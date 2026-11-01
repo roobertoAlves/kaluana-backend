@@ -1,11 +1,12 @@
 package br.edu.ifsp.kaluana.user;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
+import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -13,18 +14,21 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
-
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping("/me")
-    public UserResponseDTO me(Authentication authentication){
-        UUID userId = (UUID) authentication.getPrincipal();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
-        return UserResponseDTO.from(user);
+    public UserResponseDTO me(@AuthenticationPrincipal UUID userId) {
+        return userService.me(userId);
+    }
+
+    @PutMapping("/me/profile")
+    public UserResponseDTO updateProfile(
+            @AuthenticationPrincipal UUID userId,
+            @Valid @RequestBody UpdateProfileRequestDTO request) {
+        return userService.updateProfile(userId, request);
     }
 }
