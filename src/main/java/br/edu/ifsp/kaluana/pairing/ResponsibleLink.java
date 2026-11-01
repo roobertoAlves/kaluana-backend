@@ -1,6 +1,5 @@
 package br.edu.ifsp.kaluana.pairing;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -55,5 +54,13 @@ public class ResponsibleLink {
     }
     public String getAccessLevel() {
         return accessLevel;
+    }
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    /** Quem está do outro lado do vínculo, do ponto de vista de {@code userId}. */
+    public UUID otherSideOf(UUID userId) {
+        return userId.equals(primaryUserId) ? responsibleId : primaryUserId;
     }
 }

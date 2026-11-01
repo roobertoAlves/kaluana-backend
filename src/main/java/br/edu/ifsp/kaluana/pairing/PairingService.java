@@ -10,7 +10,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class PairingService {
@@ -70,6 +74,39 @@ public class PairingService {
         if (!responsibleLinkRepository.existsByResponsibleIdAndPrimaryUserId(responsibleId, primaryUserId)) {
             responsibleLinkRepository.save(new ResponsibleLink(responsibleId, primaryUserId));
         }
+    }
+
+    /** Vínculos de quem está logado, com o nome de quem está do outro lado. */
+    @Transactional(readOnly = true)
+    public List<LinkedUserResponseDTO> listLinks(UUID userId) {
+        List<ResponsibleLink> links = responsibleLinkRepository.findAllInvolving(userId);
+        Map<UUID, User> others = userRepository
+                .findAllById(links.stream().map(link -> link.otherSideOf(userId)).toList())
+                .stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        return links.stream()
+                .filter(link -> others.containsKey(link.otherSideOf(userId)))
+                .map(link -> {
+                    User other = others.get(link.otherSideOf(userId));
+                    return new LinkedUserResponseDTO(other.getId(), other.getName(), other.getRole().name(), link.getCreatedAt());
+                })
+                .toList();
+    }
+
+    /** Qualquer um dos lados pode desfazer o vínculo (o principal revoga, o responsável sai). */
+    @Transactional
+    public void unlink(UUID userId, UUID otherUserId) {
+        ResponsibleLink link = responsibleLinkRepository.findAllInvolving(userId).stream()
+                .filter(l -> l.otherSideOf(userId).equals(otherUserId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
+        responsibleLinkRepository.delete(link);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isLinked(UUID responsibleId, UUID primaryUserId) {
+        return responsibleLinkRepository.existsByResponsibleIdAndPrimaryUserId(responsibleId, primaryUserId);
     }
 
     private PairingCode findValidCode(String code) {
