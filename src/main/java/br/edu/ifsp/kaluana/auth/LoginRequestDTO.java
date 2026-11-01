@@ -1,4 +1,4 @@
-package br.edu.ifsp.kaluana.dto;
+package br.edu.ifsp.kaluana.auth;
 
 import  jakarta.validation.constraints.NotBlank;
 
@@ -10,9 +10,4 @@ public record LoginRequestDTO(
     @NotBlank(message = "Informe a senha.")
     String password
 ){
-    public static record ValidateCodeResponse(
-            boolean valid,
-            String mainPersonName
-    ) {
-    }
 }

@@ -1,4 +1,4 @@
-package br.edu.ifsp.kaluana.dto;
+package br.edu.ifsp.kaluana.pairing;
 
 import java.time.OffsetDateTime;
 

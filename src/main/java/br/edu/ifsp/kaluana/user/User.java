@@ -1,4 +1,4 @@
-package br.edu.ifsp.kaluana.model;
+package br.edu.ifsp.kaluana.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

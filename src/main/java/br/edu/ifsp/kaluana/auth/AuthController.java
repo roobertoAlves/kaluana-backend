@@ -1,10 +1,5 @@
-package br.edu.ifsp.kaluana.controller;
+package br.edu.ifsp.kaluana.auth;
 
-import br.edu.ifsp.kaluana.service.AuthService;
-import br.edu.ifsp.kaluana.dto.AuthResponseDTO;
-import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
-import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequestDTO;
-import br.edu.ifsp.kaluana.dto.RegisterResponsibleRequestDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

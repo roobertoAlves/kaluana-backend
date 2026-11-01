@@ -1,8 +1,5 @@
-package br.edu.ifsp.kaluana.controller;
+package br.edu.ifsp.kaluana.user;
 
-import br.edu.ifsp.kaluana.dto.UserResponseDTO;
-import br.edu.ifsp.kaluana.model.User;
-import br.edu.ifsp.kaluana.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;

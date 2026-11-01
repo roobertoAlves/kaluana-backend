@@ -1,7 +1,5 @@
-package br.edu.ifsp.kaluana.controller;
+package br.edu.ifsp.kaluana.auth;
 
-import br.edu.ifsp.kaluana.dto.AuthResponseDTO;
-import br.edu.ifsp.kaluana.security.SocialAuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

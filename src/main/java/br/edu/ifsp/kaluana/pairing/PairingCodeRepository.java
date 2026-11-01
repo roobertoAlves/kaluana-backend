@@ -1,6 +1,5 @@
-package br.edu.ifsp.kaluana.repository;
+package br.edu.ifsp.kaluana.pairing;
 
-import br.edu.ifsp.kaluana.model.PairingCode;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.OffsetDateTime;

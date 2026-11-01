@@ -1,6 +1,5 @@
-package br.edu.ifsp.kaluana.dto;
+package br.edu.ifsp.kaluana.user;
 
-import br.edu.ifsp.kaluana.model.User;
 
 import java.util.UUID;
 
