@@ -1,0 +1,37 @@
+package br.edu.ifsp.kaluana.task;
+
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface TaskRepository extends JpaRepository<Task, UUID> {
+
+    // Carrega as microetapas na mesma consulta (evita N+1 ao listar).
+    @EntityGraph(attributePaths = "steps")
+    List<Task> findTop300ByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    @EntityGraph(attributePaths = "steps")
+    List<Task> findTop300ByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, TaskStatus status);
+
+    @EntityGraph(attributePaths = "steps")
+    Optional<Task> findByIdAndUserId(UUID id, UUID userId);
+
+    boolean existsByIdAndUserId(UUID id, UUID userId);
+
+    /** Pendentes que entram no plano de um dia: sem data ou com data até o dia. */
+    @Query("""
+            select t from Task t
+            where t.userId = :userId and t.status = br.edu.ifsp.kaluana.task.TaskStatus.TODO
+              and (t.dueDate is null or t.dueDate <= :day)
+            """)
+    List<Task> findPlannable(@Param("userId") UUID userId, @Param("day") LocalDate day);
+
+    long countByUserIdAndStatusAndCompletedAtGreaterThanEqual(UUID userId, TaskStatus status, OffsetDateTime since);
+}
