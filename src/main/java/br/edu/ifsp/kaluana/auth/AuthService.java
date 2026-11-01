@@ -1,13 +1,11 @@
-package br.edu.ifsp.kaluana.service;
+package br.edu.ifsp.kaluana.auth;
 
-import br.edu.ifsp.kaluana.dto.AuthResponseDTO;
-import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
-import br.edu.ifsp.kaluana.dto.RegisterPrimaryRequestDTO;
-import br.edu.ifsp.kaluana.dto.RegisterResponsibleRequestDTO;
-import br.edu.ifsp.kaluana.dto.UserResponseDTO;
-import br.edu.ifsp.kaluana.model.User;
-import br.edu.ifsp.kaluana.model.UserRole;
-import br.edu.ifsp.kaluana.repository.UserRepository;
+import br.edu.ifsp.kaluana.pairing.PairingService;
+
+import br.edu.ifsp.kaluana.user.UserResponseDTO;
+import br.edu.ifsp.kaluana.user.User;
+import br.edu.ifsp.kaluana.user.UserRole;
+import br.edu.ifsp.kaluana.user.UserRepository;
 import br.edu.ifsp.kaluana.security.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +22,7 @@ public class AuthService {
     private final PairingService pairingService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private volatile String hashFicticio;
 
     public AuthService(
             UserRepository userRepository,
@@ -72,14 +71,23 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponseDTO login(LoginRequestDTO request) {
-        User user = userRepository.findByEmailIgnoreCase(request.email().trim())
-                .orElseThrow(this::credenciaisInvalidas);
+        User user = userRepository.findByEmailIgnoreCase(request.email().trim()).orElse(null);
 
-        if (!passwordEncoder.matches(request.password(), user.getHashPassword())) {
+        // Sem usuário, compara com um hash qualquer mesmo assim: a resposta leva
+        // o mesmo tempo nos dois casos e não revela quais e-mails têm conta.
+        String hash = user != null ? user.getHashPassword() : hashFicticio();
+        if (!passwordEncoder.matches(request.password(), hash) || user == null) {
             throw credenciaisInvalidas();
         }
 
         return gerarResposta(user);
+    }
+
+    private String hashFicticio() {
+        if (hashFicticio == null) {
+            hashFicticio = passwordEncoder.encode("kaluana-usuario-inexistente");
+        }
+        return hashFicticio;
     }
 
     private void garantirEmailDisponivel(String email) {

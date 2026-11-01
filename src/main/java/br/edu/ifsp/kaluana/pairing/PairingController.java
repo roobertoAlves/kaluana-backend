@@ -1,9 +1,5 @@
-package br.edu.ifsp.kaluana.controller;
+package br.edu.ifsp.kaluana.pairing;
 
-import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
-import br.edu.ifsp.kaluana.service.PairingService;
-import br.edu.ifsp.kaluana.dto.GenerateCodeResponseDTO;
-import br.edu.ifsp.kaluana.dto.ValidateCodeRequestDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +22,7 @@ public class PairingController {
     }
 
     @PostMapping("/validate-code")
-    public ResponseEntity<LoginRequestDTO.ValidateCodeResponse> validateCode(@Valid @RequestBody ValidateCodeRequestDTO request) {
+    public ResponseEntity<ValidateCodeResponseDTO> validateCode(@Valid @RequestBody ValidateCodeRequestDTO request) {
         return ResponseEntity.ok(pairingService.validateCode(request.code()));
     }
 

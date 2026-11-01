@@ -1,13 +1,7 @@
-package br.edu.ifsp.kaluana.service;
+package br.edu.ifsp.kaluana.pairing;
 
-import br.edu.ifsp.kaluana.dto.LoginRequestDTO;
-import br.edu.ifsp.kaluana.model.PairingCode;
-import br.edu.ifsp.kaluana.repository.PairingCodeRepository;
-import br.edu.ifsp.kaluana.model.ResponsibleLink;
-import br.edu.ifsp.kaluana.repository.ResponsibleLinkRepository;
-import br.edu.ifsp.kaluana.dto.GenerateCodeResponseDTO;
-import br.edu.ifsp.kaluana.model.User;
-import br.edu.ifsp.kaluana.repository.UserRepository;
+import br.edu.ifsp.kaluana.user.User;
+import br.edu.ifsp.kaluana.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,7 +16,7 @@ import java.util.UUID;
 public class PairingService {
 
     // Sem O/0/I/1, para não confundir quem está digitando o código à mão.
-    private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int CODE_LENGTH = 6;
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -51,10 +45,10 @@ public class PairingService {
     }
 
     @Transactional(readOnly = true)
-    public LoginRequestDTO.ValidateCodeResponse validateCode(String code) {
+    public ValidateCodeResponseDTO validateCode(String code) {
         PairingCode pairingCode = findValidCode(code);
         User primaryUser = findUser(pairingCode.getPrimaryUserId());
-        return new LoginRequestDTO.ValidateCodeResponse(true, primaryUser.getName());
+        return new ValidateCodeResponseDTO(true, primaryUser.getName());
     }
 
     /**

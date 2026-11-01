@@ -1,4 +1,4 @@
-package br.edu.ifsp.kaluana.dto;
+package br.edu.ifsp.kaluana.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

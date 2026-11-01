@@ -1,6 +1,5 @@
-package br.edu.ifsp.kaluana.repository;
+package br.edu.ifsp.kaluana.user;
 
-import br.edu.ifsp.kaluana.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

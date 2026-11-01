@@ -1,6 +1,5 @@
 package br.edu.ifsp.kaluana.security;
 
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -31,10 +30,15 @@ public class RedisRateLimiter {
      * o objetivo aqui, não uma contagem financeira exata.
      */
     public boolean tryConsume(String key) {
+        return tryConsume(key, maxAttempts, window);
+    }
+
+    /** Mesma janela fixa, com limite próprio (ex.: chamadas ao assistente de IA por usuário). */
+    public boolean tryConsume(String key, long limit, Duration limitWindow) {
         Long count = redisTemplate.opsForValue().increment(key);
         if (count != null && count == 1L) {
-            redisTemplate.expire(key, window);
+            redisTemplate.expire(key, limitWindow);
         }
-        return count != null && count <= maxAttempts;
+        return count != null && count <= limit;
     }
 }
