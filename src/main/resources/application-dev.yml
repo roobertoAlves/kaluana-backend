@@ -15,7 +15,7 @@ spring:
       password: ${REDIS_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
   flyway:
     enabled: true
@@ -46,3 +46,11 @@ app:
   rate-limit:
     max-attempts: ${RATE_LIMIT_MAX_ATTEMPTS:5}
     window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+  assistant:
+    enabled: ${ASSISTANT_ENABLED:false}
+    base-url: ${ASSISTANT_BASE_URL:http://localhost:11434/v1}
+    model: ${ASSISTANT_MODEL:llama3.2:3b}
+    api-key: ${ASSISTANT_API_KEY:}
+    timeout: ${ASSISTANT_TIMEOUT:20s}
+    max-requests-per-hour: ${ASSISTANT_MAX_REQUESTS_PER_HOUR:20}
+    reasoning-effort: ${ASSISTANT_REASONING_EFFORT:none}
