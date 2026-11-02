@@ -40,7 +40,7 @@ public class TimerSession {
     private boolean water;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 5)
+    @Column(nullable = false, length = 6)
     private TimerSound sound = TimerSound.NONE;
 
     @Enumerated(EnumType.STRING)
