@@ -2861,6 +2861,471 @@
 			]
 		},
 		{
+			"name": "Day Review (RF17)",
+			"item": [
+				{
+					"name": "Create Task for review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Ler o capítulo 3\",\n    \"priority\": \"LOW\",\n    \"estimatedMinutes\": 30,\n    \"dueDate\": \"{{today}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const d = new Date(); d.setDate(d.getDate() + 1); pm.collectionVariables.set('tomorrow', d.toISOString().slice(0, 10));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('reviewTaskId', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create second Task for review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Marcar consulta\",\n    \"priority\": \"MEDIUM\",\n    \"estimatedMinutes\": 10,\n    \"dueDate\": \"{{today}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('reviewTask2Id', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Day Review (ainda não feita → 404)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Review (tarefa repetida → 400)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"moves\": [\n        {\n            \"taskId\": \"{{reviewTaskId}}\",\n            \"action\": \"DONE\"\n        },\n        {\n            \"taskId\": \"{{reviewTaskId}}\",\n            \"action\": \"TOMORROW\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Review (tarefa de outra pessoa → 404)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"moves\": [\n        {\n            \"taskId\": \"{{reviewTaskId}}\",\n            \"action\": \"TOMORROW\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Review (sentimento inválido → 400)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"feeling\": \"GREAT\",\n    \"moves\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Review",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"feeling\": \"OK\",\n    \"moves\": [\n        {\n            \"taskId\": \"{{reviewTaskId}}\",\n            \"action\": \"TOMORROW\"\n        },\n        {\n            \"taskId\": \"{{reviewTask2Id}}\",\n            \"action\": \"NO_DATE\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('contagens', () => pm.expect(pm.response.json()).to.include({ feeling: 'OK', movedTomorrow: 1, unscheduled: 1, completed: 0 }));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Tasks after review",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks?done=false",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "done",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const list = pm.response.json();",
+									"pm.test('foi para amanhã', () => pm.expect(list.find(t => t.id === pm.collectionVariables.get('reviewTaskId')).dueDate).to.eql(pm.collectionVariables.get('tomorrow')));",
+									"pm.test('ficou sem data', () => pm.expect(list.find(t => t.id === pm.collectionVariables.get('reviewTask2Id')).dueDate).to.eql(null));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Day Review",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('como foi o dia', () => pm.expect(pm.response.json().feeling).to.eql('OK'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Review (remarcar tarefa já concluída → 409)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-reviews/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-reviews",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"moves\": [\n        {\n            \"taskId\": \"{{taskId}}\",\n            \"action\": \"TOMORROW\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 409', () => pm.response.to.have.status(409));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Access Settings (RF8)",
 			"item": [
 				{

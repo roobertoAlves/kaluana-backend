@@ -79,6 +79,20 @@ public class TaskService {
         return taskRepository.findPlannable(userId, day);
     }
 
+    /**
+     * RF17: decisão da revisão do fim do dia sobre uma tarefa do próprio
+     * usuário (404 se não for dele). Roda dentro da transação da revisão.
+     */
+    @Transactional
+    public void applyReview(UUID userId, UUID taskId, ReviewAction action, LocalDate reviewedDay) {
+        Task task = findOwned(userId, taskId);
+        switch (action) {
+            case TOMORROW -> task.reschedule(reviewedDay.plusDays(1));
+            case NO_DATE -> task.reschedule(null);
+            case DONE -> task.markDone(true);
+        }
+    }
+
     /** Quais destas tarefas do usuário estão concluídas (RF14: "concluída" x "removida"). */
     @Transactional(readOnly = true)
     public Set<UUID> doneAmong(UUID userId, Collection<UUID> taskIds) {
