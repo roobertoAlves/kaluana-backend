@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -16,12 +15,11 @@ import java.util.UUID;
 @Component
 public class JwtService {
     private final SecretKey key;
-    private final long accessTokeExpirationInMinutes;
+    private final long accessTokenExpirationMinutes;
 
-    public JwtService(@Value("${app.jwt.secret}")String secret,
-                      @Value("${app.jwt.access-token-expiration-minutes}") long accessTokeExpirationInMinutes) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.accessTokeExpirationInMinutes = accessTokeExpirationInMinutes;
+    public JwtService(JwtProperties properties) {
+        this.key = Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
+        this.accessTokenExpirationMinutes = properties.accessTokenExpirationMinutes();
     }
 
     public String generateAccessToken(UUID userId, String role) {
@@ -30,7 +28,7 @@ public class JwtService {
                 .subject(userId.toString())
                 .claim("role", role)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(accessTokeExpirationInMinutes * 60)))
+                .expiration(Date.from(now.plusSeconds(accessTokenExpirationMinutes * 60)))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }

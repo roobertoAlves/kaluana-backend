@@ -2,9 +2,63 @@
 	"info": {
 		"_postman_id": "kaluana-api-collection",
 		"name": "Kaluana API",
-		"description": "Collection for testing the Kaluana Backend API",
+		"description": "Collection da API Kaluana. Rode em ordem (Runner/Newman): cada request guarda tokens e ids em variáveis da collection para as seguintes. Os e-mails são gerados por execução, então dá para rodar várias vezes no mesmo banco.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
+	"variable": [
+		{
+			"key": "primaryEmail",
+			"value": ""
+		},
+		{
+			"key": "responsibleEmail",
+			"value": ""
+		},
+		{
+			"key": "primaryToken",
+			"value": ""
+		},
+		{
+			"key": "responsibleToken",
+			"value": ""
+		},
+		{
+			"key": "primaryId",
+			"value": ""
+		},
+		{
+			"key": "responsibleId",
+			"value": ""
+		},
+		{
+			"key": "pairingCode",
+			"value": ""
+		},
+		{
+			"key": "eventId",
+			"value": ""
+		},
+		{
+			"key": "reminderId",
+			"value": ""
+		},
+		{
+			"key": "contactId",
+			"value": ""
+		},
+		{
+			"key": "taskId",
+			"value": ""
+		},
+		{
+			"key": "stepId",
+			"value": ""
+		},
+		{
+			"key": "assistantEnabled",
+			"value": ""
+		}
+	],
 	"item": [
 		{
 			"name": "Authentication",
@@ -13,16 +67,12 @@
 					"name": "Register Primary",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"primary@test.com\",\n    \"password\": \"password123\",\n    \"name\": \"User Primary\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
 							}
-						},
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/register/primary",
 							"host": [
@@ -34,65 +84,53 @@
 								"register",
 								"primary"
 							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Register Responsible",
-					"request": {
-						"method": "POST",
-						"header": [],
+						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"responsible@test.com\",\n    \"password\": \"password123\",\n    \"name\": \"User Responsible\"\n}",
+							"raw": "{\n    \"name\": \"User Primary\",\n    \"email\": \"{{primaryEmail}}\",\n    \"password\": \"password123\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/register/responsible",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"register",
-								"responsible"
-							]
 						}
 					},
-					"response": []
-				},
-				{
-					"name": "Login",
+					"response": [],
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const run = Date.now();",
+									"pm.collectionVariables.set('primaryEmail', `primary+${run}@test.com`);",
+									"pm.collectionVariables.set('responsibleEmail', `responsible+${run}@test.com`);"
+								]
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
+								"type": "text/javascript",
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"token\", jsonData.accessToken);"
-								],
-								"type": "text/javascript"
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('primaryToken', pm.response.json().accessToken);",
+									"pm.collectionVariables.set('primaryId', pm.response.json().user.id);"
+								]
 							}
 						}
-					],
+					]
+				},
+				{
+					"name": "Login",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"primary@test.com\",\n    \"password\": \"password123\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
 							}
-						},
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/login",
 							"host": [
@@ -103,9 +141,30 @@
 								"auth",
 								"login"
 							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{primaryEmail}}\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						}
 					},
-					"response": []
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.collectionVariables.set('primaryToken', pm.response.json().accessToken);"
+								]
+							}
+						}
+					]
 				}
 			]
 		},
@@ -113,49 +172,15 @@
 			"name": "Pairing",
 			"item": [
 				{
-					"name": "Validate Code",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"code\": \"123456\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/pairing/validate-code",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"pairing",
-								"validate-code"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Generate Code",
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/api/pairing/generate-code",
 							"host": [
@@ -168,7 +193,147 @@
 							]
 						}
 					},
-					"response": []
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.collectionVariables.set('pairingCode', pm.response.json().code);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Validate Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/pairing/validate-code",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"pairing",
+								"validate-code"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"{{pairingCode}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('nome da pessoa principal', () => pm.expect(pm.response.json().mainPersonName).to.eql('User Primary'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Responsible",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register/responsible",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register",
+								"responsible"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"User Responsible\",\n    \"email\": \"{{responsibleEmail}}\",\n    \"password\": \"password123\",\n    \"code\": \"{{pairingCode}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('responsibleToken', pm.response.json().accessToken);",
+									"pm.collectionVariables.set('responsibleId', pm.response.json().user.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Links (primary)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/pairing/links",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"pairing",
+								"links"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('um responsável vinculado', () => pm.expect(pm.response.json()[0].name).to.eql('User Responsible'));"
+								]
+							}
+						}
+					]
 				}
 			]
 		},
@@ -178,16 +343,140 @@
 				{
 					"name": "Get My Profile",
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"me"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"me",
+								"profile"
 							]
 						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"User Primary\",\n    \"nickname\": \"Pri\",\n    \"avatarColor\": \"#3E7BCE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('apelido salvo', () => pm.expect(pm.response.json().nickname).to.eql('Pri'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Profile (cor inválida → 400)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/me/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"me",
+								"profile"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"User Primary\",\n    \"avatarColor\": \"azul\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get My Profile (sem token → 401)",
+					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -202,7 +491,2016 @@
 							]
 						}
 					},
-					"response": []
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 401', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Events (RF1)",
+			"item": [
+				{
+					"name": "Create Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"events"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category\": \"SOBRECARGA\",\n    \"text\": \"Muito barulho no trabalho\",\n    \"urgent\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('eventId', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Event (categoria inválida → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"events"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category\": \"TRISTEZA\",\n    \"urgent\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Events",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"events"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('1 evento', () => pm.expect(pm.response.json().length).to.eql(1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Event (outro usuário → 404)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/events/{{eventId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"events",
+								"{{eventId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Reminders (RF2)",
+			"item": [
+				{
+					"name": "Create Reminder",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reminders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reminders"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Beber água\",\n    \"time\": \"08:30\",\n    \"leadMinutes\": 10,\n    \"frequency\": \"DAILY\",\n    \"insistence\": \"MEDIUM\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('reminderId', pm.response.json().id);",
+									"pm.test('horário HH:mm', () => pm.expect(pm.response.json().time).to.eql('08:30'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Reminder",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reminders/{{reminderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reminders",
+								"{{reminderId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Beber água\",\n    \"time\": \"09:00\",\n    \"leadMinutes\": 5,\n    \"frequency\": \"DAILY\",\n    \"insistence\": \"HIGH\",\n    \"enabled\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('desligado', () => pm.expect(pm.response.json().enabled).to.eql(false));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Reminders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reminders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reminders"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Reminder",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reminders/{{reminderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reminders",
+								"{{reminderId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Check-ins (RF3)",
+			"item": [
+				{
+					"name": "Record Check-in",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/check-ins/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"check-ins",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"level\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('today', new Date().toISOString().slice(0, 10));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Record Check-in (mesmo dia substitui)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/check-ins/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"check-ins",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"level\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('nível atualizado', () => pm.expect(pm.response.json().level).to.eql(4));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Record Check-in (nível 9 → 400)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/check-ins/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"check-ins",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"level\": 9\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Check-ins",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/check-ins",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"check-ins"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('um por dia', () => pm.expect(pm.response.json().length).to.eql(1));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Trusted Contacts (RF4)",
+			"item": [
+				{
+					"name": "Create Contact",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/contacts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contacts"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ana\",\n    \"method\": \"WHATSAPP\",\n    \"value\": \"(11) 98888-7777\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('contactId', pm.response.json().id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Contact (sem DDD → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/contacts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contacts"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ana\",\n    \"method\": \"LIGACAO\",\n    \"value\": \"98888-7777\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Contact",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contacts",
+								"{{contactId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ana Souza\",\n    \"method\": \"EMAIL\",\n    \"value\": \"ana@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/contacts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contacts"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Contact",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contacts",
+								"{{contactId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tasks (RF5)",
+			"item": [
+				{
+					"name": "Create Task with steps",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Estudar para a prova\",\n    \"priority\": \"HIGH\",\n    \"estimatedMinutes\": 50,\n    \"dueDate\": \"{{today}}\",\n    \"steps\": [\n        \"Separar o material\",\n        \"Ler o resumo\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('today', new Date().toISOString().slice(0, 10));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.collectionVariables.set('taskId', pm.response.json().id);",
+									"pm.collectionVariables.set('stepId', pm.response.json().steps[0].id);",
+									"pm.test('duas microetapas', () => pm.expect(pm.response.json().steps).to.have.length(2));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Task (duração 1 min → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Rápida\",\n    \"priority\": \"LOW\",\n    \"estimatedMinutes\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create second Task",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Responder e-mail\",\n    \"priority\": \"LOW\",\n    \"estimatedMinutes\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Add Step",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}/steps",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId}}",
+								"steps"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Fazer 5 exercícios\",\n    \"done\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.test('três microetapas', () => pm.expect(pm.response.json().steps).to.have.length(3));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Check Step",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}/steps/{{stepId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId}}",
+								"steps",
+								"{{stepId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Separar o material\",\n    \"done\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('etapa marcada', () => pm.expect(pm.response.json().steps[0].done).to.eql(true));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Tasks (pending)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks?done=false",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "done",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('duas pendentes', () => pm.expect(pm.response.json()).to.have.length(2));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Task of another user → 404",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Invasão\",\n    \"priority\": \"LOW\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Day Plan (RF10, RF11)",
+			"item": [
+				{
+					"name": "Day Plan (rules)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan?date={{today}}&start=09:00&end=12:00",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{today}}"
+								},
+								{
+									"key": "start",
+									"value": "09:00"
+								},
+								{
+									"key": "end",
+									"value": "12:00"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const p = pm.response.json();",
+									"pm.test('origem regras', () => pm.expect(p.source).to.eql('RULES'));",
+									"pm.test('ordem e pausa', () => pm.expect(p.blocks.map(b => b.kind)).to.eql(['TASK', 'BREAK', 'TASK']));",
+									"pm.test('alta prioridade antes', () => pm.expect(p.blocks[0].title).to.eql('Estudar para a prova'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Plan (janela invertida → 400)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan?date={{today}}&start=12:00&end=09:00",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{today}}"
+								},
+								{
+									"key": "start",
+									"value": "12:00"
+								},
+								{
+									"key": "end",
+									"value": "09:00"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Assistant Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"status"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.collectionVariables.set('assistantEnabled', String(pm.response.json().enabled));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Day Plan (assistant, com plano B)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan?date={{today}}&start=09:00&end=12:00&assistant=true",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{today}}"
+								},
+								{
+									"key": "start",
+									"value": "09:00"
+								},
+								{
+									"key": "end",
+									"value": "12:00"
+								},
+								{
+									"key": "assistant",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const p = pm.response.json();",
+									"pm.test('nenhuma tarefa some', () => pm.expect(p.blocks.filter(b => b.kind === 'TASK')).to.have.length(2));",
+									"if (pm.collectionVariables.get('assistantEnabled') !== 'true') pm.test('sem assistente usa regras', () => pm.expect(p.source).to.eql('RULES'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Suggest Steps (assistant)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/tasks/{{taskId}}/steps",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"tasks",
+								"{{taskId}}",
+								"steps"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const on = pm.collectionVariables.get('assistantEnabled') === 'true';",
+									"pm.test('200 com até 8 etapas, ou 503 se desligado/indisponível', () => {",
+									"  pm.expect([200, 503]).to.include(pm.response.code);",
+									"  if (!on) pm.expect(pm.response.code).to.eql(503);",
+									"  if (pm.response.code === 200) pm.expect(pm.response.json().steps.length).to.be.within(1, 8);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Complete Task",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{taskId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Estudar para a prova\",\n    \"priority\": \"HIGH\",\n    \"estimatedMinutes\": 50,\n    \"dueDate\": \"{{today}}\",\n    \"done\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('concluída com data', () => pm.expect(pm.response.json().completedAt).to.be.a('string'));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Focus Sessions (RF9)",
+			"item": [
+				{
+					"name": "Register Focus Session (com som e tarefa)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/timer-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"timer-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{taskId}}\",\n    \"task\": \"Estudar\",\n    \"plannedMinutes\": 25,\n    \"stepsCount\": 2,\n    \"water\": true,\n    \"sound\": \"BROWN\",\n    \"status\": \"DONE\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('startedAt', new Date(Date.now() - 300000).toISOString());",
+									"pm.collectionVariables.set('finishedAt', new Date().toISOString());"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.test('som salvo', () => pm.expect(pm.response.json().sound).to.eql('BROWN'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Focus Session (tarefa de outra pessoa → 404)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/timer-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"timer-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{taskId}}\",\n    \"task\": \"Estudar\",\n    \"plannedMinutes\": 25,\n    \"stepsCount\": 0,\n    \"water\": false,\n    \"status\": \"DONE\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Focus Session (fim antes do início → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/timer-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"timer-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"task\": \"Estudar\",\n    \"plannedMinutes\": 25,\n    \"stepsCount\": 0,\n    \"water\": false,\n    \"status\": \"CANCELED\",\n    \"startedAt\": \"{{finishedAt}}\",\n    \"finishedAt\": \"{{startedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Focus Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/timer-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"timer-sessions"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Access Settings (RF8)",
+			"item": [
+				{
+					"name": "Get Access Settings (padrão tudo desligado)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-settings"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('nada compartilhado', () => pm.expect(pm.response.json()).to.eql({ events: false, checkins: false, usage: false, reports: false }));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Access Settings (responsável → 403)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-settings"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Reports (RF7)",
+			"item": [
+				{
+					"name": "Own Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const r = pm.response.json();",
+									"pm.test('todas as seções', () => { pm.expect(r.events.total).to.eql(1); pm.expect(r.checkIns.length).to.eql(1); pm.expect(r.usage.timerSessionsDone).to.eql(1); pm.expect(r.usage.tasksCompleted).to.eql(1); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Own Report (período inválido → 400)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports?days=0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Linked Report (sem consentimento → 403)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports/linked/{{primaryId}}?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"linked",
+								"{{primaryId}}"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Allow reports + check-ins only",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-settings"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"events\": false,\n    \"checkins\": true,\n    \"usage\": false,\n    \"reports\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Linked Report (só seções liberadas)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports/linked/{{primaryId}}?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"linked",
+								"{{primaryId}}"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const r = pm.response.json();",
+									"pm.test('só check-ins', () => { pm.expect(r.checkIns).to.have.length(1); pm.expect(r).to.not.have.property('events'); pm.expect(r).to.not.have.property('usage'); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Linked Report (principal → 403)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports/linked/{{primaryId}}?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"linked",
+								"{{primaryId}}"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Unlink",
+			"item": [
+				{
+					"name": "Unlink (responsável sai)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/pairing/links/{{primaryId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"pairing",
+								"links",
+								"{{primaryId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Linked Report (sem vínculo → 404)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports/linked/{{primaryId}}?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"linked",
+								"{{primaryId}}"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
 				}
 			]
 		}

@@ -16,9 +16,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final Set<String> LIMITED_PATHS = Set.of(
             "/api/auth/login",
-            "api/pairing/validate-code",
-            "api/auth/register/primary",
-            "api/auth/register/responsible"
+            "/api/pairing/validate-code",
+            "/api/auth/register/primary",
+            "/api/auth/register/responsible"
     );
 
 
