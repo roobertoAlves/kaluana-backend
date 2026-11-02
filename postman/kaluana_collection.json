@@ -1842,6 +1842,417 @@
 							}
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "Day Plan Replan (RF14)",
+			"item": [
+				{
+					"name": "Get Saved Plan (nenhum → 404)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Replan sem plano salvo → 404",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}/replan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}",
+								"replan"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"now\": \"09:40\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Save Day Plan (sem início → 400)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"end\": \"12:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Save Day Plan",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"start\": \"09:00\",\n    \"end\": \"12:00\",\n    \"assistant\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const p = pm.response.json();",
+									"pm.test('janela salva', () => pm.expect(p.windowEnd).to.eql('12:00'));",
+									"pm.test('blocos', () => pm.expect(p.blocks.map(b => [b.title, b.start])).to.eql([['Estudar para a prova', '09:00'], ['Pausa', '09:50'], ['Responder e-mail', '09:55']]));",
+									"pm.test('sem mudanças ao montar', () => pm.expect(p.changes).to.eql([]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Saved Plan",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('mesmo plano', () => pm.expect(pm.response.json().blocks).to.have.length(3));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Saved Plan (outra pessoa → 404)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Replan (horário inválido → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}/replan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}",
+								"replan"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"now\": \"25:99\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Replan (tarefa atrasada)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}/replan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}",
+								"replan"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"now\": \"10:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const p = pm.response.json();",
+									"pm.test('ordem aceita mantida, em andamento fixo', () => pm.expect(p.blocks.map(b => [b.title, b.start])).to.eql([['Responder e-mail', '09:55'], ['Pausa', '10:05'], ['Estudar para a prova', '10:10']]));",
+									"pm.test('avisa que foi adiada', () => pm.expect(p.changes).to.eql([{ taskId: pm.collectionVariables.get('taskId'), title: 'Estudar para a prova', kind: 'MOVED', from: '09:00', to: '10:10' }]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Replan (nada mudou)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}/replan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}",
+								"replan"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"now\": \"10:01\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('sem avisos', () => pm.expect(pm.response.json().changes).to.eql([]));"
+								]
+							}
+						}
+					]
 				},
 				{
 					"name": "Complete Task",
@@ -1887,6 +2298,58 @@
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
 									"pm.test('concluída com data', () => pm.expect(pm.response.json().completedAt).to.be.a('string'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Replan (concluída antes do horário)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/day-plan/{{today}}/replan",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"day-plan",
+								"{{today}}",
+								"replan"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"now\": \"10:02\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const p = pm.response.json();",
+									"pm.test('tempo liberado', () => pm.expect(p.changes.map(c => c.kind)).to.eql(['DONE']));",
+									"pm.test('só sobra a em andamento', () => pm.expect(p.blocks.map(b => b.title)).to.eql(['Responder e-mail']));"
 								]
 							}
 						}
