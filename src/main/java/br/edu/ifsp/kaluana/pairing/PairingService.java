@@ -2,7 +2,6 @@ package br.edu.ifsp.kaluana.pairing;
 
 import br.edu.ifsp.kaluana.user.User;
 import br.edu.ifsp.kaluana.user.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,11 +32,11 @@ public class PairingService {
             PairingCodeRepository pairingCodeRepository,
             ResponsibleLinkRepository responsibleLinkRepository,
             UserRepository userRepository,
-            @Value("${app.pairing.code-expiration-minutes}") long codeExpirationMinutes) {
+            PairingProperties properties) {
         this.pairingCodeRepository = pairingCodeRepository;
         this.responsibleLinkRepository = responsibleLinkRepository;
         this.userRepository = userRepository;
-        this.codeExpirationMinutes = codeExpirationMinutes;
+        this.codeExpirationMinutes = properties.codeExpirationMinutes();
     }
 
     @Transactional

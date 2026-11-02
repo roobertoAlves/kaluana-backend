@@ -1,6 +1,5 @@
 package br.edu.ifsp.kaluana.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +14,10 @@ public class RedisRateLimiter {
 
     public RedisRateLimiter(
             StringRedisTemplate redisTemplate,
-            @Value("${app.rate-limit.max-attempts}") long maxAttempts,
-            @Value("${app.rate-limit.window-seconds}") long windowSeconds) {
+            RateLimitProperties properties) {
         this.redisTemplate = redisTemplate;
-        this.maxAttempts = maxAttempts;
-        this.window = Duration.ofSeconds(windowSeconds);
+        this.maxAttempts = properties.maxAttempts();
+        this.window = Duration.ofSeconds(properties.windowSeconds());
     }
 
     /**
