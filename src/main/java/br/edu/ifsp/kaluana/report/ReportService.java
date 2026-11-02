@@ -1,6 +1,8 @@
 package br.edu.ifsp.kaluana.report;
 
 import br.edu.ifsp.kaluana.access.AccessSettingsService;
+import br.edu.ifsp.kaluana.ambient.AmbientMode;
+import br.edu.ifsp.kaluana.ambient.AmbientSessionRepository;
 import br.edu.ifsp.kaluana.pairing.PairingService;
 
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.CheckInEntry;
@@ -47,6 +49,7 @@ public class ReportService {
     private final CheckInRepository checkInRepository;
     private final TimerSessionRepository timerSessionRepository;
     private final TaskRepository taskRepository;
+    private final AmbientSessionRepository ambientSessionRepository;
     private final AccessSettingsService accessSettingsService;
     private final PairingService pairingService;
 
@@ -56,6 +59,7 @@ public class ReportService {
             CheckInRepository checkInRepository,
             TimerSessionRepository timerSessionRepository,
             TaskRepository taskRepository,
+            AmbientSessionRepository ambientSessionRepository,
             AccessSettingsService accessSettingsService,
             PairingService pairingService) {
         this.userRepository = userRepository;
@@ -63,6 +67,7 @@ public class ReportService {
         this.checkInRepository = checkInRepository;
         this.timerSessionRepository = timerSessionRepository;
         this.taskRepository = taskRepository;
+        this.ambientSessionRepository = ambientSessionRepository;
         this.accessSettingsService = accessSettingsService;
         this.pairingService = pairingService;
     }
@@ -126,7 +131,9 @@ public class ReportService {
         return new UsageSection(
                 timerSessionRepository.countByUserIdAndStatusAndFinishedAtGreaterThanEqual(userId, TimerSessionStatus.DONE, since),
                 timerSessionRepository.countByUserIdAndStatusAndFinishedAtGreaterThanEqual(userId, TimerSessionStatus.CANCELED, since),
-                taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since));
+                taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since),
+                ambientSessionRepository.countByUserIdAndModeAndFinishedAtGreaterThanEqual(userId, AmbientMode.RELAX, since),
+                ambientSessionRepository.countByUserIdAndModeAndFinishedAtGreaterThanEqual(userId, AmbientMode.SLEEP, since));
     }
 
     private void validatePeriod(int days) {
