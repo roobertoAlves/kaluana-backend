@@ -62,7 +62,15 @@ public class DayPlanner {
 
     /** Distribui as tarefas, já ordenadas, na janela [start, end], com pausas entre elas. */
     public Plan layout(List<PlannableTask> ordered, LocalTime start, LocalTime end) {
-        List<Block> blocks = new ArrayList<>();
+        return layout(List.of(), ordered, start, end);
+    }
+
+    /**
+     * Como o anterior, mas depois de blocos já fixados que terminam em
+     * {@code start} (ex.: o bloco em andamento, no replanejamento).
+     */
+    public Plan layout(List<Block> fixed, List<PlannableTask> ordered, LocalTime start, LocalTime end) {
+        List<Block> blocks = new ArrayList<>(fixed);
         List<PlannableTask> unscheduled = new ArrayList<>();
         int cursor = minutesOfDay(start);
         int limit = minutesOfDay(end);
