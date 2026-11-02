@@ -1,7 +1,6 @@
 package br.edu.ifsp.kaluana.config;
 import br.edu.ifsp.kaluana.security.JwtAuthenticationFilter;
 import br.edu.ifsp.kaluana.security.RateLimitFilter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,17 +25,17 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwetAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
     private final String allowedOrigin;
 
     public SecurityConfig(
-            JwtAuthenticationFilter jwetAuthenticationFilter,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
             RateLimitFilter rateLimitFilter,
-            @Value("${app.cors.allowed-origin}") String allowedOrigin){
-        this.jwetAuthenticationFilter = jwetAuthenticationFilter;
+            CorsProperties corsProperties) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.rateLimitFilter = rateLimitFilter;
-        this.allowedOrigin = allowedOrigin;
+        this.allowedOrigin = corsProperties.allowedOrigin();
     }
 
     @Bean
@@ -57,7 +56,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedEntryPoint()))
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(jwetAuthenticationFilter, RateLimitFilter.class);
+                .addFilterAfter(jwtAuthenticationFilter, RateLimitFilter.class);
 
         return http.build();
     }
