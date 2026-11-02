@@ -6,7 +6,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /** RF5: tarefas e microetapas do usuário. Toda busca é filtrada pelo dono. */
@@ -75,6 +77,12 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<Task> plannableFor(UUID userId, LocalDate day) {
         return taskRepository.findPlannable(userId, day);
+    }
+
+    /** Quais destas tarefas do usuário estão concluídas (RF14: "concluída" x "removida"). */
+    @Transactional(readOnly = true)
+    public Set<UUID> doneAmong(UUID userId, Collection<UUID> taskIds) {
+        return taskIds.isEmpty() ? Set.of() : Set.copyOf(taskRepository.findDoneIds(userId, taskIds));
     }
 
     /** Só o título: é o único dado da tarefa enviado ao assistente de IA (RNF7). */

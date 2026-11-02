@@ -4,11 +4,15 @@ import br.edu.ifsp.kaluana.assistant.AssistantService;
 import br.edu.ifsp.kaluana.assistant.PlanningAssistant.TaskSummary;
 import br.edu.ifsp.kaluana.checkin.CheckInService;
 import br.edu.ifsp.kaluana.plan.DayPlanResponseDTO.Source;
+import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
 import br.edu.ifsp.kaluana.plan.DayPlanner.Plan;
 import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
+import br.edu.ifsp.kaluana.plan.DayReplanner.Replan;
 import br.edu.ifsp.kaluana.task.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -21,8 +25,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * RF10/RF11: junta tarefas pendentes e check-in do dia, ordena (pelas regras ou
- * pelo assistente) e distribui na janela de horários. O plano não é salvo.
+ * RF10/RF11/RF14: junta tarefas pendentes e check-in do dia, ordena (pelas
+ * regras ou pelo assistente) e distribui na janela de horários. O plano pode
+ * ser só consultado ou salvo; o salvo é replanejado quando o dia muda.
  */
 @Service
 public class DayPlanService {
@@ -34,25 +39,87 @@ public class DayPlanService {
     private final CheckInService checkInService;
     private final AssistantService assistantService;
     private final DayPlanner planner;
+    private final DayReplanner replanner;
+    private final DayPlanRepository dayPlanRepository;
+    private final TransactionTemplate transaction;
 
-    public DayPlanService(TaskService taskService, CheckInService checkInService,
-                          AssistantService assistantService, DayPlanner planner) {
+    public DayPlanService(TaskService taskService, CheckInService checkInService, AssistantService assistantService,
+                          DayPlanner planner, DayReplanner replanner, DayPlanRepository dayPlanRepository,
+                          TransactionTemplate transaction) {
         this.taskService = taskService;
         this.checkInService = checkInService;
         this.assistantService = assistantService;
         this.planner = planner;
+        this.replanner = replanner;
+        this.dayPlanRepository = dayPlanRepository;
+        this.transaction = transaction;
     }
 
+    /** Monta o plano sem salvar (pré-visualização). */
     public DayPlanResponseDTO plan(UUID userId, LocalDate day, LocalTime start, LocalTime end, boolean useAssistant) {
+        Composed composed = compose(userId, day, start, end, useAssistant);
+        Plan plan = composed.plan();
+        return new DayPlanResponseDTO(
+                day,
+                composed.energy(),
+                composed.source(),
+                composed.note(),
+                end,
+                plan.blocks().stream().map(DayPlanResponseDTO.Block::from).toList(),
+                plan.unscheduled().stream()
+                        .map(t -> new DayPlanResponseDTO.Unscheduled(t.id(), t.title(), t.minutes()))
+                        .toList(),
+                List.of());
+    }
+
+    /**
+     * Monta e salva o plano do dia, substituindo o anterior ("Montar de novo").
+     * A chamada ao assistente fica fora da transação para não prender uma
+     * conexão do banco enquanto a IA responde.
+     */
+    public DayPlanResponseDTO save(UUID userId, LocalDate day, SaveDayPlanRequestDTO request) {
+        Composed composed = compose(userId, day, request.start(), request.end(), request.assistant());
+        return transaction.execute(status -> {
+            DayPlan saved = dayPlanRepository.findByUserIdAndPlanDate(userId, day)
+                    .orElseGet(() -> new DayPlan(userId, day));
+            saved.replace(composed.plan(), request.end(), composed.source(), composed.energy(), composed.note());
+            return DayPlanResponseDTO.from(dayPlanRepository.save(saved), List.of());
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public DayPlanResponseDTO saved(UUID userId, LocalDate day) {
+        return DayPlanResponseDTO.from(findSaved(userId, day), List.of());
+    }
+
+    /**
+     * RF14: reorganiza o plano salvo a partir de {@code now}, mantendo a ordem
+     * aceita. Não consulta o assistente (RNF7): a ordem já foi revisada.
+     */
+    @Transactional
+    public DayPlanResponseDTO replan(UUID userId, LocalDate day, LocalTime now) {
+        DayPlan saved = findSaved(userId, day);
+        List<DayPlanner.Block> previous = saved.blocksAsPlanned();
+        List<UUID> previousTaskIds = previous.stream()
+                .filter(b -> b.kind() == BlockKind.TASK)
+                .map(DayPlanner.Block::taskId)
+                .toList();
+        Integer energy = checkInService.levelOn(userId, day).orElse(null);
+
+        Replan replan = replanner.replan(previous, plannable(userId, day),
+                taskService.doneAmong(userId, previousTaskIds), day, energy, now, saved.getWindowEnd());
+
+        saved.replace(replan.plan(), saved.getWindowEnd(), saved.getSource(), energy, null);
+        return DayPlanResponseDTO.from(saved, replan.changes());
+    }
+
+    private Composed compose(UUID userId, LocalDate day, LocalTime start, LocalTime end, boolean useAssistant) {
         if (!start.isBefore(end)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O horário de início precisa ser antes do fim.");
         }
 
-        List<PlannableTask> tasks = taskService.plannableFor(userId, day).stream()
-                .map(t -> new PlannableTask(t.getId(), t.getTitle(), t.getPriority(), t.getEstimatedMinutes(), t.getDueDate()))
-                .toList();
         Integer energy = checkInService.levelOn(userId, day).orElse(null);
-        List<PlannableTask> ordered = planner.order(tasks, day, energy);
+        List<PlannableTask> ordered = planner.order(plannable(userId, day), day, energy);
 
         Source source = Source.RULES;
         String note = null;
@@ -65,19 +132,18 @@ public class DayPlanService {
                 note = ASSISTANT_FALLBACK_NOTE;
             }
         }
+        return new Composed(planner.layout(ordered, start, end), energy, source, note);
+    }
 
-        Plan plan = planner.layout(ordered, start, end);
-        return new DayPlanResponseDTO(
-                day,
-                energy,
-                source,
-                note,
-                plan.blocks().stream()
-                        .map(b -> new DayPlanResponseDTO.Block(b.kind(), b.taskId(), b.title(), b.start(), b.end()))
-                        .toList(),
-                plan.unscheduled().stream()
-                        .map(t -> new DayPlanResponseDTO.Unscheduled(t.id(), t.title(), t.minutes()))
-                        .toList());
+    private List<PlannableTask> plannable(UUID userId, LocalDate day) {
+        return taskService.plannableFor(userId, day).stream()
+                .map(t -> new PlannableTask(t.getId(), t.getTitle(), t.getPriority(), t.getEstimatedMinutes(), t.getDueDate()))
+                .toList();
+    }
+
+    private DayPlan findSaved(UUID userId, LocalDate day) {
+        return dayPlanRepository.findByUserIdAndPlanDate(userId, day)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum plano salvo para este dia."));
     }
 
     /**
@@ -95,5 +161,8 @@ public class DayPlanService {
             result.addAll(ruleOrder);
             return new ArrayList<>(result);
         });
+    }
+
+    private record Composed(Plan plan, Integer energy, Source source, String note) {
     }
 }
