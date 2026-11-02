@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +33,12 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
               and (t.dueDate is null or t.dueDate <= :day)
             """)
     List<Task> findPlannable(@Param("userId") UUID userId, @Param("day") LocalDate day);
+
+    @Query("""
+            select t.id from Task t
+            where t.userId = :userId and t.status = br.edu.ifsp.kaluana.task.TaskStatus.DONE and t.id in :ids
+            """)
+    List<UUID> findDoneIds(@Param("userId") UUID userId, @Param("ids") Collection<UUID> ids);
 
     long countByUserIdAndStatusAndCompletedAtGreaterThanEqual(UUID userId, TaskStatus status, OffsetDateTime since);
 }
