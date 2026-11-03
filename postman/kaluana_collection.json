@@ -160,7 +160,145 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
-									"pm.collectionVariables.set('primaryToken', pm.response.json().accessToken);"
+									"pm.collectionVariables.set('primaryToken', pm.response.json().accessToken);",
+									"pm.collectionVariables.set('primaryRefreshToken', pm.response.json().refreshToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh Session (RNF4)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{primaryRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const body = pm.response.json();",
+									"pm.test('novo par de tokens', () => { pm.expect(body.accessToken).to.be.a('string'); pm.expect(body.refreshToken).to.not.eql(pm.collectionVariables.get('primaryRefreshToken')); });",
+									"pm.collectionVariables.set('usedRefreshToken', pm.collectionVariables.get('primaryRefreshToken'));",
+									"pm.collectionVariables.set('primaryToken', body.accessToken);",
+									"pm.collectionVariables.set('primaryRefreshToken', body.refreshToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh Session (token já usado → 401)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{usedRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 401', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{primaryRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
 								]
 							}
 						}
@@ -329,7 +467,8 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
-									"pm.test('um responsável vinculado', () => pm.expect(pm.response.json()[0].name).to.eql('User Responsible'));"
+									"pm.test('um responsável vinculado', () => pm.expect(pm.response.json()[0].name).to.eql('User Responsible'));",
+									"pm.test('vínculo começa com o padrão (tudo desligado)', () => { const p = pm.response.json()[0].permissions; pm.expect(p.relationship).to.eql('OTHER'); pm.expect(p.reports).to.eql(false); });"
 								]
 							}
 						}
@@ -2661,7 +2800,8 @@
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
 									"const r = pm.response.json();",
-									"pm.test('todas as seções', () => { pm.expect(r.events.total).to.eql(1); pm.expect(r.checkIns.length).to.eql(1); pm.expect(r.usage.timerSessionsDone).to.eql(1); pm.expect(r.usage.tasksCompleted).to.eql(1); });"
+									"pm.test('todas as seções', () => { pm.expect(r.events.total).to.eql(1); pm.expect(r.checkIns.length).to.eql(1); pm.expect(r.usage.timerSessionsDone).to.eql(1); pm.expect(r.usage.tasksCompleted).to.eql(1); });",
+									"pm.test('detalhes do período', () => { pm.expect(r.events.entries).to.have.length(1); pm.expect(r.tasks.completed).to.have.length(1); });"
 								]
 							}
 						}
@@ -2750,7 +2890,7 @@
 					]
 				},
 				{
-					"name": "Allow reports + check-ins only",
+					"name": "Allow reports + check-ins + tasks (para esta pessoa)",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -2764,18 +2904,21 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/access-settings",
+							"raw": "{{baseUrl}}/api/pairing/links/{{responsibleId}}/permissions",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"access-settings"
+								"pairing",
+								"links",
+								"{{responsibleId}}",
+								"permissions"
 							]
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"events\": false,\n    \"checkins\": true,\n    \"usage\": false,\n    \"reports\": true\n}",
+							"raw": "{\n    \"relationship\": \"HEALTH_PROFESSIONAL\",\n    \"events\": false,\n    \"checkins\": true,\n    \"usage\": false,\n    \"tasks\": true,\n    \"reports\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2790,7 +2933,158 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test('status 200', () => pm.response.to.have.status(200));"
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('perfil salvo', () => pm.expect(pm.response.json().relationship).to.eql('HEALTH_PROFESSIONAL'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Permissions (sem perfil → 400)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/pairing/links/{{responsibleId}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"pairing",
+								"links",
+								"{{responsibleId}}",
+								"permissions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"events\": true,\n    \"checkins\": true,\n    \"usage\": true,\n    \"tasks\": true,\n    \"reports\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Permissions (pessoa não vinculada → 404)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/pairing/links/00000000-0000-0000-0000-000000000000/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"pairing",
+								"links",
+								"00000000-0000-0000-0000-000000000000",
+								"permissions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"relationship\": \"HEALTH_PROFESSIONAL\",\n    \"events\": false,\n    \"checkins\": true,\n    \"usage\": false,\n    \"tasks\": true,\n    \"reports\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Permissions (responsável → 403)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/pairing/links/{{primaryId}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"pairing",
+								"links",
+								"{{primaryId}}",
+								"permissions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"relationship\": \"HEALTH_PROFESSIONAL\",\n    \"events\": false,\n    \"checkins\": true,\n    \"usage\": false,\n    \"tasks\": true,\n    \"reports\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
 								]
 							}
 						}
@@ -2834,7 +3128,8 @@
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
 									"const r = pm.response.json();",
-									"pm.test('só check-ins', () => { pm.expect(r.checkIns).to.have.length(1); pm.expect(r).to.not.have.property('events'); pm.expect(r).to.not.have.property('usage'); });"
+									"pm.test('só o que foi liberado para esta pessoa', () => { pm.expect(r.checkIns).to.have.length(1); pm.expect(r.tasks.completed).to.have.length(1); pm.expect(r).to.not.have.property('events'); pm.expect(r).to.not.have.property('usage'); });",
+									"pm.test('identifica para quem foi gerado', () => { pm.expect(r.preparedFor).to.eql('User Responsible'); pm.expect(r.relationship).to.eql('HEALTH_PROFESSIONAL'); });"
 								]
 							}
 						}

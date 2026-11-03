@@ -1,7 +1,10 @@
 package br.edu.ifsp.kaluana.pairing;
 
+import br.edu.ifsp.kaluana.access.AccessSettings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,11 +34,50 @@ public class ResponsibleLink {
     @Column(name = "created_at", nullable = false, length = 20)
     private OffsetDateTime createdAt;
 
+    // RF8: autorização desta pessoa (cada vínculo tem a sua).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "relationship", nullable = false, length = 20)
+    private LinkRelationship relationship = LinkRelationship.OTHER;
+
+    @Column(name = "share_events", nullable = false)
+    private boolean shareEvents;
+
+    @Column(name = "share_check_ins", nullable = false)
+    private boolean shareCheckIns;
+
+    @Column(name = "share_usage", nullable = false)
+    private boolean shareUsage;
+
+    @Column(name = "share_tasks", nullable = false)
+    private boolean shareTasks;
+
+    @Column(name = "share_reports", nullable = false)
+    private boolean shareReports;
+
     protected ResponsibleLink() {}
 
     public ResponsibleLink(UUID responsibleId, UUID primaryUserId) {
         this.responsibleId = responsibleId;
         this.primaryUserId = primaryUserId;
+    }
+
+    /** Novo vínculo começa com o padrão que o usuário principal escolheu. */
+    public static ResponsibleLink withDefaults(UUID responsibleId, UUID primaryUserId, AccessSettings defaults) {
+        ResponsibleLink link = new ResponsibleLink(responsibleId, primaryUserId);
+        link.shareEvents = defaults.isShareEvents();
+        link.shareCheckIns = defaults.isShareCheckIns();
+        link.shareUsage = defaults.isShareUsage();
+        link.shareReports = defaults.isShareReports();
+        return link;
+    }
+
+    public void updatePermissions(LinkPermissionsDTO permissions) {
+        this.relationship = permissions.relationship();
+        this.shareEvents = permissions.events();
+        this.shareCheckIns = permissions.checkins();
+        this.shareUsage = permissions.usage();
+        this.shareTasks = permissions.tasks();
+        this.shareReports = permissions.reports();
     }
 
     @PrePersist
@@ -57,6 +99,24 @@ public class ResponsibleLink {
     }
     public OffsetDateTime getCreatedAt() {
         return createdAt;
+    }
+    public LinkRelationship getRelationship() {
+        return relationship;
+    }
+    public boolean isShareEvents() {
+        return shareEvents;
+    }
+    public boolean isShareCheckIns() {
+        return shareCheckIns;
+    }
+    public boolean isShareUsage() {
+        return shareUsage;
+    }
+    public boolean isShareTasks() {
+        return shareTasks;
+    }
+    public boolean isShareReports() {
+        return shareReports;
     }
 
     /** Quem está do outro lado do vínculo, do ponto de vista de {@code userId}. */

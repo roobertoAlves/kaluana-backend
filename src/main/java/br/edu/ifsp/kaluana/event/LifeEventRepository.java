@@ -15,6 +15,8 @@ public interface LifeEventRepository extends JpaRepository<LifeEvent, UUID> {
 
     Optional<LifeEvent> findByIdAndUserId(UUID id, UUID userId);
 
+    List<LifeEvent> findTop500ByUserIdAndOccurredAtGreaterThanEqualOrderByOccurredAtAsc(UUID userId, OffsetDateTime since);
+
     long countByUserIdAndUrgentTrueAndOccurredAtGreaterThanEqual(UUID userId, OffsetDateTime since);
 
     @Query("""

@@ -10,7 +10,10 @@ import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** RF8: consentimento do usuário principal sobre o que o responsável pode ver. */
+/**
+ * RF8: padrão de compartilhamento do usuário principal. Vale para quem se
+ * conectar depois; cada vínculo tem a sua própria autorização (ResponsibleLink).
+ */
 @Entity
 @Table(name = "access_settings")
 public class AccessSettings {

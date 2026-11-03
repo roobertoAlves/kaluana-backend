@@ -34,25 +34,30 @@ class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     @Test
     void deveCriarContaPrimariaQuandoEmailDisponivel() {
-        AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder , jwtService);
+        AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder, jwtService, refreshTokenService);
         RegisterPrimaryRequestDTO request = new RegisterPrimaryRequestDTO("Maria", "maria@example.com", "senhaSegura1");
 
         when(userRepository.existsByEmailIgnoreCase("maria@example.com")).thenReturn(false);
         when(passwordEncoder.encode("senhaSegura1")).thenReturn("hash-fake");
         when(jwtService.generateAccessToken(any(), anyString())).thenReturn("token-fake");
+        when(refreshTokenService.issue(any())).thenReturn("renovacao-fake");
 
         AuthResponseDTO response = authService.registerPrimary(request);
 
         assertThat(response.accessToken()).isEqualTo("token-fake");
+        assertThat(response.refreshToken()).isEqualTo("renovacao-fake");
         assertThat(response.user().name()).isEqualTo("Maria");
         assertThat(response.user().role()).isEqualTo(UserRole.PRIMARY.name());
     }
 
     @Test
     void deveRecusarCadastroComEmailJaExistente() {
-        AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder , jwtService);
+        AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder, jwtService, refreshTokenService);
         RegisterPrimaryRequestDTO request = new RegisterPrimaryRequestDTO("Maria", "maria@example.com", "senhaSegura1");
 
         when(userRepository.existsByEmailIgnoreCase("maria@example.com")).thenReturn(true);
@@ -64,7 +69,7 @@ class AuthServiceTest {
 
     @Test
     void deveCompararSenhaMesmoQuandoEmailNaoExiste() {
-        AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder , jwtService);
+        AuthService authService = new AuthService(userRepository, pairingService, passwordEncoder, jwtService, refreshTokenService);
 
         when(userRepository.findByEmailIgnoreCase("ninguem@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hash-ficticio");

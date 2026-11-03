@@ -40,5 +40,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             """)
     List<UUID> findDoneIds(@Param("userId") UUID userId, @Param("ids") Collection<UUID> ids);
 
+    List<Task> findTop300ByUserIdAndStatusAndCompletedAtGreaterThanEqualOrderByCompletedAtAsc(UUID userId, TaskStatus status, OffsetDateTime since);
+
+    long countByUserIdAndStatus(UUID userId, TaskStatus status);
+
     long countByUserIdAndStatusAndCompletedAtGreaterThanEqual(UUID userId, TaskStatus status, OffsetDateTime since);
 }
