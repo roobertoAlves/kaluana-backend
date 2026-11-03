@@ -11,3 +11,8 @@ hs_err_pid*
 .env.dev
 .env.homolog
 .env.prod
+
+*.local
+
+# configuração local do Claude Code
+.claude/

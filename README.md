@@ -74,6 +74,17 @@ docker compose down
 O `down` para os contêineres e mantém os dados. Para apagar também o banco,
 use `docker compose down -v`.
 
+### Produção (HTTPS)
+
+`docker-compose.prod.yml` sobe a mesma API sem expor a porta 8080: quem
+atende a internet é o Caddy (`Caddyfile`), que obtém o certificado HTTPS
+automaticamente para o domínio em `DOMAIN`. Nesse arquivo o Redis exige
+senha (`REDIS_PASSWORD`). Use um `.env` próprio de produção:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
 ## 4. Como rodar sem Docker
 
 Com PostgreSQL e Redis rodando na máquina, exporte as variáveis da seção 2
