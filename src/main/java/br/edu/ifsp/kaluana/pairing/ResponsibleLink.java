@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.pairing;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import br.edu.ifsp.kaluana.access.AccessSettings;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,9 +13,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "responsible_links")
@@ -34,7 +34,6 @@ public class ResponsibleLink {
     @Column(name = "created_at", nullable = false, length = 20)
     private OffsetDateTime createdAt;
 
-    // RF8: autorização desta pessoa (cada vínculo tem a sua).
     @Enumerated(EnumType.STRING)
     @Column(name = "relationship", nullable = false, length = 20)
     private LinkRelationship relationship = LinkRelationship.OTHER;
@@ -61,7 +60,6 @@ public class ResponsibleLink {
         this.primaryUserId = primaryUserId;
     }
 
-    /** Novo vínculo começa com o padrão que o usuário principal escolheu. */
     public static ResponsibleLink withDefaults(UUID responsibleId, UUID primaryUserId, AccessSettings defaults) {
         ResponsibleLink link = new ResponsibleLink(responsibleId, primaryUserId);
         link.shareEvents = defaults.isShareEvents();
@@ -119,7 +117,6 @@ public class ResponsibleLink {
         return shareReports;
     }
 
-    /** Quem está do outro lado do vínculo, do ponto de vista de {@code userId}. */
     public UUID otherSideOf(UUID userId) {
         return userId.equals(primaryUserId) ? responsibleId : primaryUserId;
     }

@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.auth;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,10 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-/** Token de renovação de sessão. Só o hash SHA-256 fica no banco. */
 @Entity
 @Table(name = "refresh_tokens")
 public class RefreshToken {

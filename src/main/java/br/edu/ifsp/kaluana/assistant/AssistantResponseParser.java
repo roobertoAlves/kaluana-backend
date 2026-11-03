@@ -1,18 +1,13 @@
 package br.edu.ifsp.kaluana.assistant;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Valida o texto devolvido pelo modelo antes de qualquer uso (RNF7). O modelo
- * pode responder com texto em volta do JSON, índices inválidos ou repetidos e
- * etapas enormes: tudo isso é filtrado aqui. Função pura, testada isoladamente.
- */
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 final class AssistantResponseParser {
 
     static final int MAX_STEPS = 8;
@@ -23,7 +18,6 @@ final class AssistantResponseParser {
     private AssistantResponseParser() {
     }
 
-    /** Espera {"ordem": [2, 0, 1]}. Devolve índices válidos, distintos, na ordem dada. */
     static List<Integer> parseOrder(String content, int taskCount) {
         JsonNode order = firstJsonObject(content).path("ordem");
         if (!order.isArray()) {
@@ -41,7 +35,6 @@ final class AssistantResponseParser {
         return List.copyOf(indexes);
     }
 
-    /** Espera {"etapas": ["...", "..."]}. Remove vazias, caracteres de controle e excesso. */
     static List<String> parseSteps(String content) {
         JsonNode stepsNode = firstJsonObject(content).path("etapas");
         if (!stepsNode.isArray()) {
@@ -61,7 +54,6 @@ final class AssistantResponseParser {
         return steps;
     }
 
-    /** Pega o primeiro objeto JSON do texto (modelos às vezes escrevem algo antes ou depois). */
     private static JsonNode firstJsonObject(String content) {
         if (content == null) {
             throw new AssistantUnavailableException("Resposta vazia.");

@@ -1,20 +1,18 @@
 package br.edu.ifsp.kaluana.checkin;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** RF3: um check-in por dia, consultado como série temporal. */
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 @Service
 public class CheckInService {
 
-    // Folga para fusos à frente do servidor (ex.: usuário em UTC+14).
     private static final int MAX_DAYS_AHEAD = 1;
 
     private final CheckInRepository checkInRepository;
@@ -30,7 +28,6 @@ public class CheckInService {
                 .toList();
     }
 
-    /** Idempotente: cria o check-in do dia ou substitui o nível já registrado. */
     @Transactional
     public CheckInResponseDTO record(UUID userId, LocalDate day, CheckInRequestDTO request) {
         if (day.isAfter(LocalDate.now().plusDays(MAX_DAYS_AHEAD))) {
@@ -43,7 +40,6 @@ public class CheckInService {
         return CheckInResponseDTO.from(checkInRepository.save(checkIn));
     }
 
-    /** Nível registrado no dia, se houver. Usado pelo plano do dia (RF10). */
     @Transactional(readOnly = true)
     public Optional<Integer> levelOn(UUID userId, LocalDate day) {
         return checkInRepository.findByUserIdAndDay(userId, day).map(CheckIn::getLevel);

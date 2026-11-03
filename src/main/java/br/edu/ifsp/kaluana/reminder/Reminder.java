@@ -1,5 +1,9 @@
 package br.edu.ifsp.kaluana.reminder;
 
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,14 +15,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-/**
- * RF2: só a configuração do lembrete fica no servidor. O disparo da
- * notificação é agendado no aparelho (RNF2), que funciona offline.
- */
 @Entity
 @Table(name = "reminders")
 public class Reminder {
@@ -57,7 +53,6 @@ public class Reminder {
     private OffsetDateTime updatedAt;
 
     protected Reminder() {
-        // exigido pelo JPA
     }
 
     public Reminder(UUID userId) {

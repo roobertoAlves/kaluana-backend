@@ -1,6 +1,5 @@
 package br.edu.ifsp.kaluana.access;
 
-/** Mesmo formato do AccessSettings do app; serve de entrada e de saída. */
 public record AccessSettingsDTO(
         boolean events,
         boolean checkins,

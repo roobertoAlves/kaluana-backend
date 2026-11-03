@@ -1,20 +1,5 @@
 package br.edu.ifsp.kaluana.plan;
 
-import br.edu.ifsp.kaluana.assistant.AssistantService;
-import br.edu.ifsp.kaluana.assistant.PlanningAssistant.TaskSummary;
-import br.edu.ifsp.kaluana.checkin.CheckInService;
-import br.edu.ifsp.kaluana.plan.DayPlanResponseDTO.Source;
-import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
-import br.edu.ifsp.kaluana.plan.DayPlanner.Plan;
-import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
-import br.edu.ifsp.kaluana.plan.DayReplanner.Replan;
-import br.edu.ifsp.kaluana.task.TaskService;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -24,11 +9,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * RF10/RF11/RF14: junta tarefas pendentes e check-in do dia, ordena (pelas
- * regras ou pelo assistente) e distribui na janela de horários. O plano pode
- * ser só consultado ou salvo; o salvo é replanejado quando o dia muda.
- */
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.server.ResponseStatusException;
+
+import br.edu.ifsp.kaluana.assistant.AssistantService;
+import br.edu.ifsp.kaluana.assistant.PlanningAssistant.TaskSummary;
+import br.edu.ifsp.kaluana.checkin.CheckInService;
+import br.edu.ifsp.kaluana.plan.DayPlanResponseDTO.Source;
+import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
+import br.edu.ifsp.kaluana.plan.DayPlanner.Plan;
+import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
+import br.edu.ifsp.kaluana.plan.DayReplanner.Replan;
+import br.edu.ifsp.kaluana.task.TaskService;
+
 @Service
 public class DayPlanService {
 
@@ -55,7 +51,6 @@ public class DayPlanService {
         this.transaction = transaction;
     }
 
-    /** Monta o plano sem salvar (pré-visualização). */
     public DayPlanResponseDTO plan(UUID userId, LocalDate day, LocalTime start, LocalTime end, boolean useAssistant) {
         Composed composed = compose(userId, day, start, end, useAssistant);
         Plan plan = composed.plan();
@@ -72,11 +67,7 @@ public class DayPlanService {
                 List.of());
     }
 
-    /**
-     * Monta e salva o plano do dia, substituindo o anterior ("Montar de novo").
-     * A chamada ao assistente fica fora da transação para não prender uma
-     * conexão do banco enquanto a IA responde.
-     */
+
     public DayPlanResponseDTO save(UUID userId, LocalDate day, SaveDayPlanRequestDTO request) {
         Composed composed = compose(userId, day, request.start(), request.end(), request.assistant());
         return transaction.execute(status -> {
@@ -92,10 +83,7 @@ public class DayPlanService {
         return DayPlanResponseDTO.from(findSaved(userId, day), List.of());
     }
 
-    /**
-     * RF14: reorganiza o plano salvo a partir de {@code now}, mantendo a ordem
-     * aceita. Não consulta o assistente (RNF7): a ordem já foi revisada.
-     */
+
     @Transactional
     public DayPlanResponseDTO replan(UUID userId, LocalDate day, LocalTime now) {
         DayPlan saved = findSaved(userId, day);
@@ -146,10 +134,6 @@ public class DayPlanService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum plano salvo para este dia."));
     }
 
-    /**
-     * A IA só reordena: recebe título e duração (RNF7) e devolve índices. Tarefas
-     * que ela omitir entram no fim, na ordem das regras, para nenhuma sumir.
-     */
     private Optional<List<PlannableTask>> orderWithAssistant(UUID userId, List<PlannableTask> ruleOrder, Integer energy) {
         List<TaskSummary> summaries = ruleOrder.stream()
                 .map(t -> new TaskSummary(t.title(), t.minutes()))

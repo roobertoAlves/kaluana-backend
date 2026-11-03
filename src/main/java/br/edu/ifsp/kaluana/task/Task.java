@@ -1,5 +1,15 @@
 package br.edu.ifsp.kaluana.task;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,20 +23,8 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 
-/**
- * RF5: tarefa com microetapas. As regras (limite de etapas, conclusão) ficam
- * aqui, perto dos dados, para o serviço não precisar repeti-las.
- */
 @Entity
 @Table(name = "tasks")
 public class Task {
@@ -71,7 +69,6 @@ public class Task {
     private List<TaskStep> steps = new ArrayList<>();
 
     protected Task() {
-        // exigido pelo JPA
     }
 
     public Task(UUID userId) {

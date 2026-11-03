@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.task;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -11,10 +14,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-/** Microetapa de uma tarefa. Só existe dentro de uma Task (criada e removida por ela). */
 @Entity
 @Table(name = "task_steps")
 public class TaskStep {
@@ -40,7 +39,6 @@ public class TaskStep {
     private OffsetDateTime createdAt;
 
     protected TaskStep() {
-        // exigido pelo JPA
     }
 
     TaskStep(Task task, String text, int position) {

@@ -1,18 +1,15 @@
 package br.edu.ifsp.kaluana.task;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
-import java.util.List;
 
-/**
- * Corpo de criação e de edição. {@code steps} só é usado na criação (atalho
- * para já criar a tarefa com microetapas); na edição, as etapas têm rotas próprias.
- */
 public record TaskRequestDTO(
 
         @NotBlank(message = "Dê um nome à tarefa.")

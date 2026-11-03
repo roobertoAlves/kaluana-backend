@@ -1,5 +1,13 @@
 package br.edu.ifsp.kaluana.plan;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 import br.edu.ifsp.kaluana.plan.DayPlanResponseDTO.Source;
 import br.edu.ifsp.kaluana.plan.DayPlanner.Block;
 import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
@@ -20,18 +28,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
-/**
- * RF10 / RF14: o plano aceito para um dia (um por usuário e dia). Guarda uma
- * fotografia dos blocos para que o replanejamento saiba o que mudou.
- */
 @Entity
 @Table(name = "day_plans")
 public class DayPlan {
@@ -76,7 +72,6 @@ public class DayPlan {
     private List<UnscheduledTask> unscheduled = new ArrayList<>();
 
     protected DayPlan() {
-        // exigido pelo JPA
     }
 
     public DayPlan(UUID userId, LocalDate planDate) {
@@ -95,7 +90,6 @@ public class DayPlan {
         this.updatedAt = OffsetDateTime.now();
     }
 
-    /** Substitui o conteúdo do plano (ao montar de novo ou ao replanejar). */
     public void replace(Plan plan, LocalTime windowEnd, Source source, Integer energyLevel, String note) {
         this.windowEnd = windowEnd;
         this.source = source;
@@ -159,7 +153,6 @@ public class DayPlan {
         private LocalTime endTime;
 
         protected PlannedBlock() {
-            // exigido pelo JPA
         }
 
         PlannedBlock(BlockKind kind, UUID taskId, String title, LocalTime startTime, LocalTime endTime) {
@@ -188,7 +181,6 @@ public class DayPlan {
         private int minutes;
 
         protected UnscheduledTask() {
-            // exigido pelo JPA
         }
 
         UnscheduledTask(UUID taskId, String title, int minutes) {

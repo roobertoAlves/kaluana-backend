@@ -1,13 +1,7 @@
 package br.edu.ifsp.kaluana.plan;
 
-import br.edu.ifsp.kaluana.plan.DayPlanner.Block;
-import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
-import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
-import br.edu.ifsp.kaluana.plan.DayReplanner.Change;
-import br.edu.ifsp.kaluana.plan.DayReplanner.ChangeKind;
-import br.edu.ifsp.kaluana.plan.DayReplanner.Replan;
-import br.edu.ifsp.kaluana.task.TaskPriority;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,8 +9,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.groups.Tuple.tuple;
+import org.junit.jupiter.api.Test;
+
+import br.edu.ifsp.kaluana.plan.DayPlanner.Block;
+import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
+import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
+import br.edu.ifsp.kaluana.plan.DayReplanner.Change;
+import br.edu.ifsp.kaluana.plan.DayReplanner.ChangeKind;
+import br.edu.ifsp.kaluana.plan.DayReplanner.Replan;
+import br.edu.ifsp.kaluana.task.TaskPriority;
 
 class DayReplannerTest {
 
@@ -26,7 +27,6 @@ class DayReplannerTest {
     private final DayPlanner planner = new DayPlanner();
     private final DayReplanner replanner = new DayReplanner(planner);
 
-    // Plano aceito às 09:00: A 09:00–09:30, pausa, B 09:35–10:05, pausa, C 10:10–10:40.
     private final PlannableTask a = task("A", 30);
     private final PlannableTask b = task("B", 30);
     private final PlannableTask c = task("C", 30);
@@ -34,7 +34,6 @@ class DayReplannerTest {
 
     @Test
     void tarefaAtrasadaEmpurraORestoSemMudarAOrdem() {
-        // 09:42: A não foi concluída; B já começou mas está em andamento.
         Replan replan = replanner.replan(accepted, List.of(a, b, c), Set.of(), DAY, null, time("09:42"), END);
 
         assertThat(taskTitles(replan)).containsExactly("B", "A", "C");
@@ -47,7 +46,6 @@ class DayReplannerTest {
 
     @Test
     void tarefaConcluidaAntesDoHorarioAdiantaAsSeguintes() {
-        // 09:12: A ficou pronta cedo.
         Replan replan = replanner.replan(accepted, List.of(b, c), Set.of(a.id()), DAY, null, time("09:12"), END);
 
         assertThat(taskTitles(replan)).containsExactly("B", "C");
@@ -75,7 +73,6 @@ class DayReplannerTest {
 
     @Test
     void oQueNaoCabeMaisSaiDoDiaSemSumir() {
-        // 11:20, nada feito: só cabe uma tarefa até 12:00.
         Replan replan = replanner.replan(accepted, List.of(a, b, c), Set.of(), DAY, null, time("11:20"), END);
 
         assertThat(taskTitles(replan)).containsExactly("A");

@@ -1,13 +1,14 @@
 package br.edu.ifsp.kaluana.reminder;
 
+import java.time.LocalTime;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.time.LocalTime;
 
 public record ReminderRequestDTO(
 
@@ -29,7 +30,6 @@ public record ReminderRequestDTO(
         @NotNull(message = "Escolha a insistência.")
         ReminderInsistence insistence,
 
-        // Ausente no JSON = ligado, que é o padrão ao criar.
         Boolean enabled
 ) {
     public boolean enabledOrDefault() {

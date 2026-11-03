@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.access;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -7,13 +10,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-/**
- * RF8: padrão de compartilhamento do usuário principal. Vale para quem se
- * conectar depois; cada vínculo tem a sua própria autorização (ResponsibleLink).
- */
 @Entity
 @Table(name = "access_settings")
 public class AccessSettings {
@@ -38,10 +34,9 @@ public class AccessSettings {
     private OffsetDateTime updatedAt;
 
     protected AccessSettings() {
-        // exigido pelo JPA
+
     }
 
-    /** Padrão seguro: nada compartilhado até o usuário ligar. */
     public static AccessSettings nothingSharedFor(UUID userId) {
         AccessSettings settings = new AccessSettings();
         settings.userId = userId;

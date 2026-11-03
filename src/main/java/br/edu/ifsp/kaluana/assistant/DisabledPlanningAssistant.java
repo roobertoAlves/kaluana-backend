@@ -2,7 +2,6 @@ package br.edu.ifsp.kaluana.assistant;
 
 import java.util.List;
 
-/** Usado quando app.assistant.enabled=false (padrão): o app funciona sem IA (RNF7). */
 class DisabledPlanningAssistant implements PlanningAssistant {
 
     @Override

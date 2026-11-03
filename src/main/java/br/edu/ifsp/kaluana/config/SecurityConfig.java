@@ -1,6 +1,7 @@
 package br.edu.ifsp.kaluana.config;
-import br.edu.ifsp.kaluana.security.JwtAuthenticationFilter;
-import br.edu.ifsp.kaluana.security.RateLimitFilter;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,8 +19,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import br.edu.ifsp.kaluana.security.JwtAuthenticationFilter;
+import br.edu.ifsp.kaluana.security.RateLimitFilter;
 
 @Configuration
 @EnableMethodSecurity
@@ -61,11 +62,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Sem token (ou com token expirado) a resposta padrão do Spring é 403.
-     * Devolvemos 401 no mesmo formato do ApiError para o app saber que
-     * precisa entrar de novo, em vez de achar que faltou permissão.
-     */
     private AuthenticationEntryPoint unauthorizedEntryPoint() {
         return (request, response, authException) -> {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -79,8 +75,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        // Só as origens configuradas (separadas por vírgula). O app nativo não
-        // envia Origin; o CORS vale para o build web e ferramentas no navegador.
         corsConfiguration.setAllowedOrigins(Arrays.stream(allowedOrigin.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())

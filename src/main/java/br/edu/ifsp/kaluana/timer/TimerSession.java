@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.timer;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,9 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "timer_sessions")
@@ -23,7 +23,6 @@ public class TimerSession {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    // Tarefa de origem (opcional). Se a tarefa for apagada, a sessão fica, sem vínculo.
     @Column(name = "task_id")
     private UUID taskId;
 
@@ -54,7 +53,6 @@ public class TimerSession {
     private OffsetDateTime finishedAt;
 
     protected TimerSession() {
-        // exigido pelo JPA
     }
 
     public TimerSession(UUID userId, UUID taskId, String task, int plannedMinutes, int stepsCount, boolean water,

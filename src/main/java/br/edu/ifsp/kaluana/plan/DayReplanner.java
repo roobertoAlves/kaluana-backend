@@ -1,11 +1,5 @@
 package br.edu.ifsp.kaluana.plan;
 
-import br.edu.ifsp.kaluana.plan.DayPlanner.Block;
-import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
-import br.edu.ifsp.kaluana.plan.DayPlanner.Plan;
-import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -18,12 +12,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * RF14 / RNF1: reorganiza um plano salvo quando o dia muda. Função pura, como
- * o {@link DayPlanner}: recebe o plano anterior, as tarefas pendentes e o
- * horário atual (vindo do aparelho) e devolve o novo plano e o que mudou.
- * As regras estão no Apêndice "Modelo Comportamental" do relatório.
- */
+import org.springframework.stereotype.Component;
+
+import br.edu.ifsp.kaluana.plan.DayPlanner.Block;
+import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
+import br.edu.ifsp.kaluana.plan.DayPlanner.Plan;
+import br.edu.ifsp.kaluana.plan.DayPlanner.PlannableTask;
+
+
 @Component
 public class DayReplanner {
 
@@ -32,7 +28,6 @@ public class DayReplanner {
 
     public enum ChangeKind { MOVED, ADDED, DONE, REMOVED, DROPPED }
 
-    /** {@code from} é o horário no plano anterior; {@code to}, no novo. */
     public record Change(UUID taskId, String title, ChangeKind kind, LocalTime from, LocalTime to) {
     }
 
@@ -45,17 +40,11 @@ public class DayReplanner {
         this.planner = planner;
     }
 
-    /**
-     * @param previous blocos do plano salvo
-     * @param pending  tarefas pendentes que entram no dia (já atualizadas)
-     * @param doneIds  tarefas do plano anterior que foram concluídas
-     */
     public Replan replan(List<Block> previous, List<PlannableTask> pending, Set<UUID> doneIds,
                          LocalDate day, Integer energyLevel, LocalTime now, LocalTime end) {
         Map<UUID, PlannableTask> pendingById = new LinkedHashMap<>();
         pending.forEach(task -> pendingById.put(task.id(), task));
 
-        // O bloco em andamento não se move: quem está fazendo a tarefa não deve ser interrompido.
         Block current = previous.stream()
                 .filter(b -> b.kind() == BlockKind.TASK && pendingById.containsKey(b.taskId()))
                 .filter(b -> !now.isBefore(b.start()) && now.isBefore(b.end()))
@@ -63,7 +52,6 @@ public class DayReplanner {
                 .map(b -> new Block(BlockKind.TASK, b.taskId(), pendingById.get(b.taskId()).title(), b.start(), b.end()))
                 .orElse(null);
 
-        // A ordem que o usuário já aceitou é mantida; o que não estava em bloco vem depois, pelas regras.
         List<PlannableTask> ordered = new ArrayList<>();
         Set<UUID> placed = new HashSet<>();
         if (current != null) {
@@ -97,7 +85,6 @@ public class DayReplanner {
             UUID id = b.taskId();
             PlannableTask task = pendingById.get(id);
             if (task == null) {
-                // Blocos que já passaram e foram feitos não são novidade.
                 if (b.end().isAfter(now)) {
                     changes.add(new Change(id, b.title(), doneIds.contains(id) ? ChangeKind.DONE : ChangeKind.REMOVED, b.start(), null));
                 }
@@ -113,7 +100,6 @@ public class DayReplanner {
         return changes;
     }
 
-    /** Próximo horário múltiplo de 5 minutos ("09:07" → "09:10"), como o aplicativo. */
     static LocalTime nextSlot(LocalTime now) {
         int minutes = now.getHour() * 60 + now.getMinute() + (now.getSecond() > 0 ? 1 : 0);
         int slot = Math.min((minutes + SLOT_MINUTES - 1) / SLOT_MINUTES * SLOT_MINUTES, LAST_SLOT);

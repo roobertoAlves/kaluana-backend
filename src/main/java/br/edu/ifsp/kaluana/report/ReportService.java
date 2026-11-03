@@ -1,28 +1,5 @@
 package br.edu.ifsp.kaluana.report;
 
-import br.edu.ifsp.kaluana.pairing.PairingService;
-import br.edu.ifsp.kaluana.pairing.ResponsibleLink;
-
-import br.edu.ifsp.kaluana.report.ReportResponseDTO.CheckInEntry;
-import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventEntry;
-import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventsSection;
-import br.edu.ifsp.kaluana.report.ReportResponseDTO.TaskEntry;
-import br.edu.ifsp.kaluana.report.ReportResponseDTO.TasksSection;
-import br.edu.ifsp.kaluana.report.ReportResponseDTO.UsageSection;
-import br.edu.ifsp.kaluana.event.EventCategory;
-import br.edu.ifsp.kaluana.task.TaskRepository;
-import br.edu.ifsp.kaluana.task.TaskStatus;
-import br.edu.ifsp.kaluana.timer.TimerSessionStatus;
-import br.edu.ifsp.kaluana.user.User;
-import br.edu.ifsp.kaluana.checkin.CheckInRepository;
-import br.edu.ifsp.kaluana.event.LifeEventRepository;
-import br.edu.ifsp.kaluana.timer.TimerSessionRepository;
-import br.edu.ifsp.kaluana.user.UserRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.EnumMap;
@@ -30,12 +7,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * RF7: relatório informativo. Só conta e lista o que foi registrado; não
- * calcula pontuação, não classifica e não sugere nada (RNF6, diretriz NICE).
- * Para quem está vinculado, cada seção só entra se o usuário autorizou para
- * aquela pessoa (RF8/RNF3); é essa versão que o especialista exporta em PDF.
- */
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import br.edu.ifsp.kaluana.checkin.CheckInRepository;
+import br.edu.ifsp.kaluana.event.EventCategory;
+import br.edu.ifsp.kaluana.event.LifeEventRepository;
+import br.edu.ifsp.kaluana.pairing.PairingService;
+import br.edu.ifsp.kaluana.pairing.ResponsibleLink;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.CheckInEntry;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventEntry;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventsSection;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.TaskEntry;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.TasksSection;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.UsageSection;
+import br.edu.ifsp.kaluana.task.TaskRepository;
+import br.edu.ifsp.kaluana.task.TaskStatus;
+import br.edu.ifsp.kaluana.timer.TimerSessionRepository;
+import br.edu.ifsp.kaluana.timer.TimerSessionStatus;
+import br.edu.ifsp.kaluana.user.User;
+import br.edu.ifsp.kaluana.user.UserRepository;
+
 @Service
 public class ReportService {
 
@@ -67,18 +61,15 @@ public class ReportService {
         this.pairingService = pairingService;
     }
 
-    /** Relatório da própria pessoa: todas as seções. */
     @Transactional(readOnly = true)
     public ReportResponseDTO ownReport(UUID userId, int days) {
         validatePeriod(days);
         return build(findUser(userId), days, Scope.EVERYTHING, null, null);
     }
 
-    /** Relatório de quem está emparelhado com o responsável, filtrado pelo que o vínculo autoriza. */
     @Transactional(readOnly = true)
     public ReportResponseDTO linkedReport(UUID responsibleId, UUID primaryUserId, int days) {
         validatePeriod(days);
-        // 404 e não 403: não confirma para terceiros que a pessoa existe.
         ResponsibleLink link = pairingService.findLink(responsibleId, primaryUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
         if (!link.isShareReports()) {
@@ -154,7 +145,6 @@ public class ReportService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
     }
 
-    /** Quais seções entram no relatório. */
     private record Scope(boolean events, boolean checkIns, boolean usage, boolean tasks) {
 
         static final Scope EVERYTHING = new Scope(true, true, true, true);

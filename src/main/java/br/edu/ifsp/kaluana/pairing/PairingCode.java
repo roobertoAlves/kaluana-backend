@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.pairing;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,9 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "pairing_codes")
@@ -35,7 +35,6 @@ public class PairingCode {
     private OffsetDateTime createdAt;
 
     protected PairingCode() {
-        // exigido pelo JPA
     }
 
     public PairingCode(String code, UUID primaryUserId, OffsetDateTime expiresAt) {
