@@ -1,0 +1,23 @@
+# Confirmação de e-mail em desenvolvimento: o Mailpit recebe todos os e-mails
+# (nada sai para a internet) e mostra numa caixa de entrada em
+# http://localhost:8025. Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d
+# Para o Gmail no futuro, não use este arquivo: defina MAIL_HOST, MAIL_PORT,
+# MAIL_USERNAME, MAIL_PASSWORD (senha de app), MAIL_SMTP_AUTH e MAIL_STARTTLS.
+services:
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "8025:8025"
+    networks:
+      - backend-net
+
+  backend:
+    environment:
+      MAIL_HOST: mailpit
+      MAIL_PORT: "1025"
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+      EMAIL_CONFIRMATION_REQUIRED: ${EMAIL_CONFIRMATION_REQUIRED:-true}
+    depends_on:
+      mailpit:
+        condition: service_started
