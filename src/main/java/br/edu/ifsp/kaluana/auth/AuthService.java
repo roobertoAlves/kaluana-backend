@@ -22,17 +22,20 @@ public class AuthService {
     private final PairingService pairingService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private volatile String hashFicticio;
 
     public AuthService(
             UserRepository userRepository,
             PairingService pairingService,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
+            JwtService jwtService,
+            RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.pairingService = pairingService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -69,7 +72,8 @@ public class AuthService {
         return gerarResposta(user);
     }
 
-    @Transactional(readOnly = true)
+    // Não é readOnly: o login grava o token de renovação.
+    @Transactional
     public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByEmailIgnoreCase(request.email().trim()).orElse(null);
 
@@ -81,6 +85,20 @@ public class AuthService {
         }
 
         return gerarResposta(user);
+    }
+
+    /** RNF4: troca o token de renovação por um par novo (acesso + renovação). */
+    @Transactional
+    public AuthResponseDTO refresh(RefreshRequestDTO request) {
+        RefreshTokenService.Rotated rotated = refreshTokenService.rotate(request.refreshToken());
+        User user = userRepository.findById(rotated.userId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, RefreshTokenService.SESSION_EXPIRED));
+        return gerarResposta(user, rotated.refreshToken());
+    }
+
+    @Transactional
+    public void logout(RefreshRequestDTO request) {
+        refreshTokenService.revoke(request.refreshToken());
     }
 
     private String hashFicticio() {
@@ -102,7 +120,11 @@ public class AuthService {
     }
 
     private AuthResponseDTO gerarResposta(User user) {
+        return gerarResposta(user, refreshTokenService.issue(user.getId()));
+    }
+
+    private AuthResponseDTO gerarResposta(User user, String refreshToken) {
         String token = jwtService.generateAccessToken(user.getId(), user.getRole().name());
-        return new AuthResponseDTO(token, UserResponseDTO.from(user));
+        return new AuthResponseDTO(token, refreshToken, UserResponseDTO.from(user));
     }
 }
