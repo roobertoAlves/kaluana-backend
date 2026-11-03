@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +42,15 @@ public class PairingController {
     @GetMapping("/links")
     public List<LinkedUserResponseDTO> listLinks(@AuthenticationPrincipal UUID userId) {
         return pairingService.listLinks(userId);
+    }
+
+    @PutMapping("/links/{responsibleId}/permissions")
+    @PreAuthorize("hasRole('PRIMARY')")
+    public LinkPermissionsDTO updatePermissions(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID responsibleId,
+            @Valid @RequestBody LinkPermissionsDTO request) {
+        return pairingService.updatePermissions(userId, responsibleId, request);
     }
 
     @DeleteMapping("/links/{otherUserId}")

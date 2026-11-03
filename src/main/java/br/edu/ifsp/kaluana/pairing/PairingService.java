@@ -1,5 +1,6 @@
 package br.edu.ifsp.kaluana.pairing;
 
+import br.edu.ifsp.kaluana.access.AccessSettingsService;
 import br.edu.ifsp.kaluana.user.User;
 import br.edu.ifsp.kaluana.user.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -26,16 +28,19 @@ public class PairingService {
     private final PairingCodeRepository pairingCodeRepository;
     private final ResponsibleLinkRepository responsibleLinkRepository;
     private final UserRepository userRepository;
+    private final AccessSettingsService accessSettingsService;
     private final long codeExpirationMinutes;
 
     public PairingService(
             PairingCodeRepository pairingCodeRepository,
             ResponsibleLinkRepository responsibleLinkRepository,
             UserRepository userRepository,
+            AccessSettingsService accessSettingsService,
             PairingProperties properties) {
         this.pairingCodeRepository = pairingCodeRepository;
         this.responsibleLinkRepository = responsibleLinkRepository;
         this.userRepository = userRepository;
+        this.accessSettingsService = accessSettingsService;
         this.codeExpirationMinutes = properties.codeExpirationMinutes();
     }
 
@@ -71,7 +76,8 @@ public class PairingService {
     @Transactional
     public void createLink(UUID responsibleId, UUID primaryUserId) {
         if (!responsibleLinkRepository.existsByResponsibleIdAndPrimaryUserId(responsibleId, primaryUserId)) {
-            responsibleLinkRepository.save(new ResponsibleLink(responsibleId, primaryUserId));
+            responsibleLinkRepository.save(ResponsibleLink.withDefaults(
+                    responsibleId, primaryUserId, accessSettingsService.find(primaryUserId)));
         }
     }
 
@@ -88,7 +94,8 @@ public class PairingService {
                 .filter(link -> others.containsKey(link.otherSideOf(userId)))
                 .map(link -> {
                     User other = others.get(link.otherSideOf(userId));
-                    return new LinkedUserResponseDTO(other.getId(), other.getName(), other.getRole().name(), link.getCreatedAt());
+                    return new LinkedUserResponseDTO(other.getId(), other.getName(), other.getRole().name(),
+                            link.getCreatedAt(), LinkPermissionsDTO.from(link));
                 })
                 .toList();
     }
@@ -101,6 +108,20 @@ public class PairingService {
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
         responsibleLinkRepository.delete(link);
+    }
+
+    /** RF8: o principal define o que cada pessoa vinculada pode ver. */
+    @Transactional
+    public LinkPermissionsDTO updatePermissions(UUID primaryUserId, UUID responsibleId, LinkPermissionsDTO permissions) {
+        ResponsibleLink link = findLink(responsibleId, primaryUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
+        link.updatePermissions(permissions);
+        return LinkPermissionsDTO.from(link);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ResponsibleLink> findLink(UUID responsibleId, UUID primaryUserId) {
+        return responsibleLinkRepository.findByResponsibleIdAndPrimaryUserId(responsibleId, primaryUserId);
     }
 
     @Transactional(readOnly = true)

@@ -5,10 +5,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ResponsibleLinkRepository extends JpaRepository<ResponsibleLink, UUID>{
     boolean existsByResponsibleIdAndPrimaryUserId(UUID responsibleId, UUID primaryUserId);
+
+    Optional<ResponsibleLink> findByResponsibleIdAndPrimaryUserId(UUID responsibleId, UUID primaryUserId);
 
     @Query("""
             select l from ResponsibleLink l

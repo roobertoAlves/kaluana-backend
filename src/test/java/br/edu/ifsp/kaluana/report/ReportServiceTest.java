@@ -1,6 +1,9 @@
 package br.edu.ifsp.kaluana.report;
 
 import br.edu.ifsp.kaluana.access.AccessSettings;
+import br.edu.ifsp.kaluana.pairing.LinkPermissionsDTO;
+import br.edu.ifsp.kaluana.pairing.LinkRelationship;
+import br.edu.ifsp.kaluana.pairing.ResponsibleLink;
 import br.edu.ifsp.kaluana.user.User;
 import br.edu.ifsp.kaluana.user.UserRole;
 import br.edu.ifsp.kaluana.checkin.CheckInRepository;
@@ -8,7 +11,6 @@ import br.edu.ifsp.kaluana.task.TaskRepository;
 import br.edu.ifsp.kaluana.event.LifeEventRepository;
 import br.edu.ifsp.kaluana.timer.TimerSessionRepository;
 import br.edu.ifsp.kaluana.user.UserRepository;
-import br.edu.ifsp.kaluana.access.AccessSettingsService;
 import br.edu.ifsp.kaluana.pairing.PairingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,9 +54,6 @@ class ReportServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
-    private AccessSettingsService accessSettingsService;
-
-    @Mock
     private PairingService pairingService;
 
     private ReportService reportService;
@@ -62,12 +61,12 @@ class ReportServiceTest {
     @BeforeEach
     void setUp() {
         reportService = new ReportService(userRepository, lifeEventRepository, checkInRepository,
-                timerSessionRepository, taskRepository, accessSettingsService, pairingService);
+                timerSessionRepository, taskRepository, pairingService);
     }
 
     @Test
     void deveRecusarRelatorioQuandoNaoHaVinculo() {
-        when(pairingService.isLinked(RESPONSIBLE_ID, PRIMARY_ID)).thenReturn(false);
+        when(pairingService.findLink(RESPONSIBLE_ID, PRIMARY_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reportService.linkedReport(RESPONSIBLE_ID, PRIMARY_ID, 7))
                 .isInstanceOf(ResponseStatusException.class)
@@ -75,9 +74,9 @@ class ReportServiceTest {
     }
 
     @Test
-    void deveRecusarRelatorioQuandoUsuarioNaoLiberou() {
-        when(pairingService.isLinked(RESPONSIBLE_ID, PRIMARY_ID)).thenReturn(true);
-        when(accessSettingsService.find(PRIMARY_ID)).thenReturn(AccessSettings.nothingSharedFor(PRIMARY_ID));
+    void deveRecusarRelatorioQuandoUsuarioNaoLiberouParaEssaPessoa() {
+        when(pairingService.findLink(RESPONSIBLE_ID, PRIMARY_ID))
+                .thenReturn(Optional.of(link(new LinkPermissionsDTO(LinkRelationship.FAMILY, true, true, true, true, false))));
 
         assertThatThrownBy(() -> reportService.linkedReport(RESPONSIBLE_ID, PRIMARY_ID, 7))
                 .isInstanceOf(ResponseStatusException.class)
@@ -85,22 +84,39 @@ class ReportServiceTest {
     }
 
     @Test
-    void deveIncluirSoAsSecoesAutorizadas() {
-        AccessSettings access = AccessSettings.nothingSharedFor(PRIMARY_ID);
-        access.update(false, true, false, true);
-
-        when(pairingService.isLinked(RESPONSIBLE_ID, PRIMARY_ID)).thenReturn(true);
-        when(accessSettingsService.find(PRIMARY_ID)).thenReturn(access);
-        when(userRepository.findById(PRIMARY_ID)).thenReturn(Optional.of(primaryUser()));
-        when(checkInRepository.findByUserIdAndDayGreaterThanEqualOrderByDayAsc(eq(PRIMARY_ID), any())).thenReturn(List.of());
+    void deveIncluirSoAsSecoesAutorizadasParaAquelaPessoa() {
+        when(pairingService.findLink(RESPONSIBLE_ID, PRIMARY_ID))
+                .thenReturn(Optional.of(link(new LinkPermissionsDTO(LinkRelationship.HEALTH_PROFESSIONAL, false, true, false, true, true))));
+        when(userRepository.findById(PRIMARY_ID)).thenReturn(Optional.of(user("Maria", UserRole.PRIMARY)));
+        when(userRepository.findById(RESPONSIBLE_ID)).thenReturn(Optional.of(user("Dra. Ana", UserRole.RESPONSIBLE)));
+        when(checkInRepository.findByUserIdAndDayGreaterThanEqualOrderByDayAsc(any(), any())).thenReturn(List.of());
+        when(taskRepository.findTop300ByUserIdAndStatusAndCompletedAtGreaterThanEqualOrderByCompletedAtAsc(any(), any(), any()))
+                .thenReturn(List.of());
 
         ReportResponseDTO report = reportService.linkedReport(RESPONSIBLE_ID, PRIMARY_ID, 7);
 
         assertThat(report.shared()).isTrue();
+        assertThat(report.preparedFor()).isEqualTo("Dra. Ana");
+        assertThat(report.relationship()).isEqualTo(LinkRelationship.HEALTH_PROFESSIONAL);
         assertThat(report.checkIns()).isEmpty();
+        assertThat(report.tasks()).isNotNull();
         assertThat(report.events()).isNull();
         assertThat(report.usage()).isNull();
         verify(lifeEventRepository, never()).countByCategorySince(any(), any());
+    }
+
+    @Test
+    void novoVinculoComecaComOPadraoDoUsuario() {
+        AccessSettings padrao = AccessSettings.nothingSharedFor(PRIMARY_ID);
+        padrao.update(true, false, false, true);
+
+        ResponsibleLink link = ResponsibleLink.withDefaults(RESPONSIBLE_ID, PRIMARY_ID, padrao);
+
+        assertThat(link.isShareEvents()).isTrue();
+        assertThat(link.isShareCheckIns()).isFalse();
+        assertThat(link.isShareReports()).isTrue();
+        assertThat(link.isShareTasks()).isFalse();
+        assertThat(link.getRelationship()).isEqualTo(LinkRelationship.OTHER);
     }
 
     @Test
@@ -108,9 +124,16 @@ class ReportServiceTest {
         assertThatThrownBy(() -> reportService.ownReport(PRIMARY_ID, 0))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("1 a 365");
+        verify(userRepository, never()).findById(eq(PRIMARY_ID));
     }
 
-    private static User primaryUser() {
-        return new User("Maria", "maria@example.com", "hash", UserRole.PRIMARY);
+    private static ResponsibleLink link(LinkPermissionsDTO permissions) {
+        ResponsibleLink link = new ResponsibleLink(RESPONSIBLE_ID, PRIMARY_ID);
+        link.updatePermissions(permissions);
+        return link;
+    }
+
+    private static User user(String name, UserRole role) {
+        return new User(name, name.toLowerCase().replace(" ", "") + "@example.com", "hash", role);
     }
 }
