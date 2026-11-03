@@ -160,7 +160,145 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
-									"pm.collectionVariables.set('primaryToken', pm.response.json().accessToken);"
+									"pm.collectionVariables.set('primaryToken', pm.response.json().accessToken);",
+									"pm.collectionVariables.set('primaryRefreshToken', pm.response.json().refreshToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh Session (RNF4)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{primaryRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const body = pm.response.json();",
+									"pm.test('novo par de tokens', () => { pm.expect(body.accessToken).to.be.a('string'); pm.expect(body.refreshToken).to.not.eql(pm.collectionVariables.get('primaryRefreshToken')); });",
+									"pm.collectionVariables.set('usedRefreshToken', pm.collectionVariables.get('primaryRefreshToken'));",
+									"pm.collectionVariables.set('primaryToken', body.accessToken);",
+									"pm.collectionVariables.set('primaryRefreshToken', body.refreshToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh Session (token já usado → 401)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{usedRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 401', () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{primaryRefreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
 								]
 							}
 						}
