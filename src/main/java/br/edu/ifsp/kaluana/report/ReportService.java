@@ -1,12 +1,14 @@
 package br.edu.ifsp.kaluana.report;
 
-import br.edu.ifsp.kaluana.access.AccessSettingsService;
 import br.edu.ifsp.kaluana.pairing.PairingService;
+import br.edu.ifsp.kaluana.pairing.ResponsibleLink;
 
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.CheckInEntry;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventEntry;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventsSection;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.TaskEntry;
+import br.edu.ifsp.kaluana.report.ReportResponseDTO.TasksSection;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.UsageSection;
-import br.edu.ifsp.kaluana.access.AccessSettings;
 import br.edu.ifsp.kaluana.event.EventCategory;
 import br.edu.ifsp.kaluana.task.TaskRepository;
 import br.edu.ifsp.kaluana.task.TaskStatus;
@@ -31,7 +33,8 @@ import java.util.UUID;
 /**
  * RF7: relatório informativo. Só conta e lista o que foi registrado; não
  * calcula pontuação, não classifica e não sugere nada (RNF6, diretriz NICE).
- * Para o responsável, cada seção só entra se o usuário autorizou (RF8/RNF3).
+ * Para quem está vinculado, cada seção só entra se o usuário autorizou para
+ * aquela pessoa (RF8/RNF3); é essa versão que o especialista exporta em PDF.
  */
 @Service
 public class ReportService {
@@ -47,7 +50,6 @@ public class ReportService {
     private final CheckInRepository checkInRepository;
     private final TimerSessionRepository timerSessionRepository;
     private final TaskRepository taskRepository;
-    private final AccessSettingsService accessSettingsService;
     private final PairingService pairingService;
 
     public ReportService(
@@ -56,42 +58,39 @@ public class ReportService {
             CheckInRepository checkInRepository,
             TimerSessionRepository timerSessionRepository,
             TaskRepository taskRepository,
-            AccessSettingsService accessSettingsService,
             PairingService pairingService) {
         this.userRepository = userRepository;
         this.lifeEventRepository = lifeEventRepository;
         this.checkInRepository = checkInRepository;
         this.timerSessionRepository = timerSessionRepository;
         this.taskRepository = taskRepository;
-        this.accessSettingsService = accessSettingsService;
         this.pairingService = pairingService;
     }
 
     /** Relatório da própria pessoa: todas as seções. */
     @Transactional(readOnly = true)
     public ReportResponseDTO ownReport(UUID userId, int days) {
-        return build(userId, days, Scope.EVERYTHING, false);
+        validatePeriod(days);
+        return build(findUser(userId), days, Scope.EVERYTHING, null, null);
     }
 
-    /** Relatório de quem está emparelhado com o responsável, filtrado pelo consentimento. */
+    /** Relatório de quem está emparelhado com o responsável, filtrado pelo que o vínculo autoriza. */
     @Transactional(readOnly = true)
     public ReportResponseDTO linkedReport(UUID responsibleId, UUID primaryUserId, int days) {
-        if (!pairingService.isLinked(responsibleId, primaryUserId)) {
-            // 404 e não 403: não confirma para terceiros que a pessoa existe.
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado.");
-        }
-
-        AccessSettings access = accessSettingsService.find(primaryUserId);
-        if (!access.isShareReports()) {
+        validatePeriod(days);
+        // 404 e não 403: não confirma para terceiros que a pessoa existe.
+        ResponsibleLink link = pairingService.findLink(responsibleId, primaryUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
+        if (!link.isShareReports()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A pessoa ainda não liberou relatórios para você.");
         }
 
-        return build(primaryUserId, days, Scope.from(access), true);
+        User viewer = findUser(responsibleId);
+        return build(findUser(primaryUserId), days, Scope.from(link), viewer.getName(), link);
     }
 
-    private ReportResponseDTO build(UUID userId, int days, Scope scope, boolean shared) {
-        validatePeriod(days);
-        User user = findUser(userId);
+    private ReportResponseDTO build(User user, int days, Scope scope, String preparedFor, ResponsibleLink link) {
+        UUID userId = user.getId();
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime since = now.minusDays(days);
 
@@ -99,11 +98,14 @@ public class ReportService {
                 user.getName(),
                 days,
                 now,
-                shared,
+                link != null,
+                preparedFor,
+                link != null ? link.getRelationship() : null,
                 DISCLAIMER,
                 scope.events() ? eventsSection(userId, since) : null,
                 scope.checkIns() ? checkInEntries(userId, since.toLocalDate()) : null,
-                scope.usage() ? usageSection(userId, since) : null);
+                scope.usage() ? usageSection(userId, since) : null,
+                scope.tasks() ? tasksSection(userId, since) : null);
     }
 
     private EventsSection eventsSection(UUID userId, OffsetDateTime since) {
@@ -113,7 +115,11 @@ public class ReportService {
 
         long total = byCategory.values().stream().mapToLong(Long::longValue).sum();
         long urgent = lifeEventRepository.countByUserIdAndUrgentTrueAndOccurredAtGreaterThanEqual(userId, since);
-        return new EventsSection(total, byCategory, urgent);
+        List<EventEntry> entries = lifeEventRepository
+                .findTop500ByUserIdAndOccurredAtGreaterThanEqualOrderByOccurredAtAsc(userId, since).stream()
+                .map(e -> new EventEntry(e.getOccurredAt(), e.getCategory(), e.isUrgent(), e.getNote()))
+                .toList();
+        return new EventsSection(total, byCategory, urgent, entries);
     }
 
     private List<CheckInEntry> checkInEntries(UUID userId, LocalDate since) {
@@ -129,6 +135,14 @@ public class ReportService {
                 taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since));
     }
 
+    private TasksSection tasksSection(UUID userId, OffsetDateTime since) {
+        List<TaskEntry> completed = taskRepository
+                .findTop300ByUserIdAndStatusAndCompletedAtGreaterThanEqualOrderByCompletedAtAsc(userId, TaskStatus.DONE, since).stream()
+                .map(t -> new TaskEntry(t.getTitle(), t.getPriority(), t.getCompletedAt()))
+                .toList();
+        return new TasksSection(taskRepository.countByUserIdAndStatus(userId, TaskStatus.TODO), completed);
+    }
+
     private void validatePeriod(int days) {
         if (days < 1 || days > MAX_PERIOD_DAYS) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O período precisa ser de 1 a 365 dias.");
@@ -141,12 +155,12 @@ public class ReportService {
     }
 
     /** Quais seções entram no relatório. */
-    private record Scope(boolean events, boolean checkIns, boolean usage) {
+    private record Scope(boolean events, boolean checkIns, boolean usage, boolean tasks) {
 
-        static final Scope EVERYTHING = new Scope(true, true, true);
+        static final Scope EVERYTHING = new Scope(true, true, true, true);
 
-        static Scope from(AccessSettings access) {
-            return new Scope(access.isShareEvents(), access.isShareCheckIns(), access.isShareUsage());
+        static Scope from(ResponsibleLink link) {
+            return new Scope(link.isShareEvents(), link.isShareCheckIns(), link.isShareUsage(), link.isShareTasks());
         }
     }
 }
