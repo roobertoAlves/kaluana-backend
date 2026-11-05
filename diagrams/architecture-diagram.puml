@@ -55,7 +55,6 @@ cloud "External Services" {
   [Mailpit / SMTP Service\n(Email Confirmation)] as MailService
 }
 
-' Client to Backend
 HttpClient --> CorsConfig : HTTPS / REST
 CorsConfig --> RateLimiter
 RateLimiter --> JwtFilter
@@ -64,7 +63,6 @@ JwtFilter --> PlanCtrl
 JwtFilter --> MonCtrl
 JwtFilter --> ReportCtrl
 
-' Controllers to Services
 AuthCtrl --> AuthService
 PlanCtrl --> PlanService
 PlanCtrl --> TaskService
@@ -72,7 +70,6 @@ MonCtrl --> TaskService
 ReportCtrl --> ReportService
 PlanService --> AssistantService
 
-' Services to Infra & Persistence
 AuthService --> Repositories
 AuthService --> RedisData
 RateLimiter --> RedisData
