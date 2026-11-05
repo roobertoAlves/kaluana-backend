@@ -68,7 +68,6 @@
       <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
 
-    <!-- JWT: API em compile, implementação e suporte a Jackson só em runtime -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>

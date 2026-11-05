@@ -1,0 +1,86 @@
+@startuml architecture-diagram
+skinparam monochrome false
+skinparam shadowing false
+skinparam componentStyle uml2
+
+package "Client Layer (Mobile App)" {
+  [Expo / React Native UI] as UI
+  [Axios HTTP Client] as HttpClient
+  [Local Sound Engine] as SoundEngine
+  [AsyncStorage Cache] as LocalStorage
+
+  UI --> HttpClient
+  UI --> SoundEngine
+  UI --> LocalStorage
+}
+
+package "API Gateway & Security Layer" {
+  [Rate Limit Filter (Redis)] as RateLimiter
+  [JWT Authentication Filter] as JwtFilter
+  [CORS Configuration] as CorsConfig
+}
+
+package "Backend Core (Spring Boot)" {
+  package "REST Controllers" {
+    [Auth & Pairing Controller] as AuthCtrl
+    [Planning & Tasks Controller] as PlanCtrl
+    [Monitoring & Timer Controller] as MonCtrl
+    [Report Controller] as ReportCtrl
+  }
+
+  package "Domain Services" {
+    [Auth & Token Service] as AuthService
+    [DayPlanner & Replanner] as PlanService
+    [Task & Timer Service] as TaskService
+    [Report & Privacy Service] as ReportService
+    [Assistant Integration] as AssistantService
+  }
+
+  package "Data Repositories (Spring Data JPA)" {
+    [JPA Repositories] as Repositories
+  }
+}
+
+database "Persistence Layer" {
+  database "PostgreSQL 16" as Postgres {
+    [Relational Tables\n(Flyway V1..V13)] as Schema
+  }
+  database "Redis 7" as Redis {
+    [Rate Limits &\nSession Blacklist] as RedisData
+  }
+}
+
+cloud "External Services" {
+  [Ollama / OpenAI API\n(Optional AI Assistant)] as ExtAI
+  [Mailpit / SMTP Service\n(Email Confirmation)] as MailService
+}
+
+' Client to Backend
+HttpClient --> CorsConfig : HTTPS / REST
+CorsConfig --> RateLimiter
+RateLimiter --> JwtFilter
+JwtFilter --> AuthCtrl
+JwtFilter --> PlanCtrl
+JwtFilter --> MonCtrl
+JwtFilter --> ReportCtrl
+
+' Controllers to Services
+AuthCtrl --> AuthService
+PlanCtrl --> PlanService
+PlanCtrl --> TaskService
+MonCtrl --> TaskService
+ReportCtrl --> ReportService
+PlanService --> AssistantService
+
+' Services to Infra & Persistence
+AuthService --> Repositories
+AuthService --> RedisData
+RateLimiter --> RedisData
+AuthService --> MailService
+PlanService --> Repositories
+TaskService --> Repositories
+ReportService --> Repositories
+AssistantService ..> ExtAI : Optional REST/HTTP
+Repositories --> Schema
+
+@enduml
