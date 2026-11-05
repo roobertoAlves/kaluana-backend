@@ -81,7 +81,6 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), hash) || user == null) {
             throw credenciaisInvalidas();
         }
-        // Só depois da senha certa: quem não sabe a senha não descobre nada da conta.
         if (!user.isEmailVerified()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Confirme seu e-mail para entrar. Enviamos um link para " + user.getEmail() + ".");
@@ -120,10 +119,7 @@ public class AuthService {
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
     }
 
-    /**
-     * Com confirmação ligada, a conta nasce inativa: envia o link e devolve só
-     * o usuário (sem tokens). Desligada (testes), já entra direto.
-     */
+    
     private AuthResponseDTO respostaDoCadastro(User user) {
         if (!emailVerificationService.confirmationRequired()) {
             user.markEmailVerified();

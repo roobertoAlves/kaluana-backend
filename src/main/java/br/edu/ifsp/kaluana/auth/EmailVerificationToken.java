@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** Link de confirmação de e-mail. Só o hash SHA-256 fica no banco. */
+
 @Entity
 @Table(name = "email_verification_tokens")
 public class EmailVerificationToken {
@@ -36,7 +36,6 @@ public class EmailVerificationToken {
     private OffsetDateTime createdAt;
 
     protected EmailVerificationToken() {
-        // exigido pelo JPA
     }
 
     public EmailVerificationToken(UUID userId, String tokenHash, OffsetDateTime expiresAt) {

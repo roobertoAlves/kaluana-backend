@@ -44,7 +44,6 @@ public class User {
     @Column(name = "avatar_color", length = 7)
     private String avatarColor;
 
-    // Conta nova só entra depois de confirmar o e-mail (link enviado no cadastro).
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 

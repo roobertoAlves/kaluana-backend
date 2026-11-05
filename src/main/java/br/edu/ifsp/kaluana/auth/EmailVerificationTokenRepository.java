@@ -13,7 +13,7 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
 
     Optional<EmailVerificationToken> findByTokenHash(String tokenHash);
 
-    /** Ao reenviar, os links anteriores deixam de valer. */
+    
     @Modifying
     @Query("update EmailVerificationToken t set t.usedAt = :now where t.userId = :userId and t.usedAt is null")
     int invalidateAllOf(@Param("userId") UUID userId, @Param("now") OffsetDateTime now);

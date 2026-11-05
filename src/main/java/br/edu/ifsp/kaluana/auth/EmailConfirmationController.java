@@ -15,10 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.HtmlUtils;
 
-/**
- * O link do e-mail abre no navegador do celular, então a confirmação devolve
- * uma página simples (não JSON) dizendo para voltar ao app e entrar.
- */
+
 @RestController
 @RequestMapping("/api/auth")
 public class EmailConfirmationController {
@@ -39,7 +36,7 @@ public class EmailConfirmationController {
         }
     }
 
-    /** Sempre 202: não revela se o e-mail tem conta nem se já foi confirmado. */
+    
     @PostMapping("/resend-confirmation")
     public ResponseEntity<Void> resend(@Valid @RequestBody ResendRequest request) {
         verificationService.resend(request.email());

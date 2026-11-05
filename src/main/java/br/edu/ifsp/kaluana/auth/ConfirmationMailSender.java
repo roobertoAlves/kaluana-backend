@@ -14,11 +14,7 @@ import org.springframework.web.util.HtmlUtils;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Envia o e-mail de confirmação depois que o cadastro foi gravado: se o
- * cadastro falhar, nada é enviado. Se o SMTP falhar, o cadastro continua
- * valendo e a pessoa pede outro link pelo app ("Reenviar e-mail").
- */
+
 @Component
 public class ConfirmationMailSender {
 
