@@ -94,6 +94,14 @@ public class Task {
         this.dueDate = dueDate;
     }
 
+    
+    public void reschedule(LocalDate newDueDate) {
+        if (status == TaskStatus.DONE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A tarefa já foi concluída.");
+        }
+        this.dueDate = newDueDate;
+    }
+
     public void markDone(boolean done) {
         if (done && status == TaskStatus.TODO) {
             status = TaskStatus.DONE;

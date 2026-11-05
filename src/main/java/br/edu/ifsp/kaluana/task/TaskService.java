@@ -76,6 +76,17 @@ public class TaskService {
         return taskRepository.findPlannable(userId, day);
     }
 
+    @Transactional
+    public void applyReview(UUID userId, UUID taskId, ReviewAction action, LocalDate reviewedDay) {
+        Task task = findOwned(userId, taskId);
+        switch (action) {
+            case TOMORROW -> task.reschedule(reviewedDay.plusDays(1));
+            case NO_DATE -> task.reschedule(null);
+            case DONE -> task.markDone(true);
+        }
+    }
+
+
     @Transactional(readOnly = true)
     public Set<UUID> doneAmong(UUID userId, Collection<UUID> taskIds) {
         return taskIds.isEmpty() ? Set.of() : Set.copyOf(taskRepository.findDoneIds(userId, taskIds));
