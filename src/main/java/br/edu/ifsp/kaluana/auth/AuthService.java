@@ -23,6 +23,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
     private volatile String hashFicticio;
 
     public AuthService(
@@ -30,12 +31,14 @@ public class AuthService {
             PairingService pairingService,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            RefreshTokenService refreshTokenService) {
+            RefreshTokenService refreshTokenService,
+            EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.pairingService = pairingService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
@@ -49,7 +52,7 @@ public class AuthService {
                 UserRole.PRIMARY);
 
         userRepository.save(user);
-        return gerarResposta(user);
+        return respostaDoCadastro(user);
     }
 
     @Transactional
@@ -67,7 +70,7 @@ public class AuthService {
         userRepository.save(user);
         pairingService.createLink(user.getId(), primaryUserId);
 
-        return gerarResposta(user);
+        return respostaDoCadastro(user);
     }
 
     @Transactional
@@ -77,6 +80,11 @@ public class AuthService {
         String hash = user != null ? user.getHashPassword() : hashFicticio();
         if (!passwordEncoder.matches(request.password(), hash) || user == null) {
             throw credenciaisInvalidas();
+        }
+        // Só depois da senha certa: quem não sabe a senha não descobre nada da conta.
+        if (!user.isEmailVerified()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Confirme seu e-mail para entrar. Enviamos um link para " + user.getEmail() + ".");
         }
 
         return gerarResposta(user);
@@ -110,6 +118,19 @@ public class AuthService {
 
     private ResponseStatusException credenciaisInvalidas() {
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
+    }
+
+    /**
+     * Com confirmação ligada, a conta nasce inativa: envia o link e devolve só
+     * o usuário (sem tokens). Desligada (testes), já entra direto.
+     */
+    private AuthResponseDTO respostaDoCadastro(User user) {
+        if (!emailVerificationService.confirmationRequired()) {
+            user.markEmailVerified();
+            return gerarResposta(user);
+        }
+        emailVerificationService.sendConfirmation(user);
+        return new AuthResponseDTO(null, null, UserResponseDTO.from(user));
     }
 
     private AuthResponseDTO gerarResposta(User user) {

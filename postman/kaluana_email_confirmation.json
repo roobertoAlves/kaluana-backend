@@ -1,0 +1,387 @@
+{
+	"info": {
+		"_postman_id": "kaluana-email-confirmation",
+		"name": "Kaluanã · Confirmação de e-mail",
+		"description": "Cadastro com confirmação de e-mail usando o Mailpit (docker-compose.mail.yml). Rode com baseUrl da API e mailpitUrl (padrão http://localhost:8025).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "mailpitUrl",
+			"value": "http://localhost:8025"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.collectionVariables.get('confirmEmail')) pm.collectionVariables.set('confirmEmail', `confirma.${Date.now()}@teste.local`);"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "Register Primary (conta pendente)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/register/primary",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register",
+						"primary"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Pessoa Confirmação\",\n    \"email\": \"{{confirmEmail}}\",\n    \"password\": \"password123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 201', () => pm.response.to.have.status(201));",
+							"pm.test('sem tokens até confirmar', () => { const r = pm.response.json(); pm.expect(r).to.not.have.property('accessToken'); pm.expect(r.user.emailVerified).to.eql(false); });"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Login antes de confirmar → 403",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{confirmEmail}}\",\n    \"password\": \"password123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 403', () => pm.response.to.have.status(403));",
+							"pm.test('pede para confirmar', () => pm.expect(pm.response.json().message).to.include('Confirme seu e-mail'));"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Mailpit: e-mail recebido",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{mailpitUrl}}/api/v1/search?query=to:{{confirmEmail}}",
+					"host": [
+						"{{mailpitUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"search"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "to:{{confirmEmail}}"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('chegou um e-mail', () => pm.expect(pm.response.json().messages_count).to.eql(1));",
+							"pm.collectionVariables.set('messageId', pm.response.json().messages[0].ID);"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Mailpit: link do e-mail",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{mailpitUrl}}/api/v1/message/{{messageId}}",
+					"host": [
+						"{{mailpitUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"message",
+						"{{messageId}}"
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"const text = pm.response.json().Text;",
+							"const token = (text.match(/confirm-email\\?token=([A-Za-z0-9_-]+)/) || [])[1];",
+							"pm.test('tem o link de confirmação', () => pm.expect(token).to.be.a('string'));",
+							"pm.collectionVariables.set('confirmToken', token);"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Confirm Email (link inválido → 410)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/confirm-email?token=inventado",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"confirm-email"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "inventado"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 410', () => pm.response.to.have.status(410));"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Confirm Email",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/confirm-email?token={{confirmToken}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"confirm-email"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "{{confirmToken}}"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 200', () => pm.response.to.have.status(200));",
+							"pm.test('página de sucesso', () => pm.expect(pm.response.text()).to.include('E-mail confirmado'));"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Confirm Email (mesmo link de novo → 410)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/confirm-email?token={{confirmToken}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"confirm-email"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "{{confirmToken}}"
+						}
+					]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 410', () => pm.response.to.have.status(410));"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Login depois de confirmar",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{confirmEmail}}\",\n    \"password\": \"password123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 200', () => pm.response.to.have.status(200));",
+							"pm.test('entra com tokens', () => { const r = pm.response.json(); pm.expect(r.accessToken).to.be.a('string'); pm.expect(r.user.emailVerified).to.eql(true); });"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Resend Confirmation (sempre 202)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/resend-confirmation",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"resend-confirmation"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"ninguem@teste.local\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('status 202', () => pm.response.to.have.status(202));"
+						]
+					}
+				}
+			]
+		}
+	]
+}
