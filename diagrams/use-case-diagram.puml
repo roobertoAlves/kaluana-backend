@@ -1,0 +1,78 @@
+@startuml use-case-diagram
+skinparam monochrome false
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+actor "Primary User\n(Person with ADHD)" as User
+actor "Responsible / Professional\n(Family or Clinician)" as Responsible
+actor "AI Assistant Service\n(External / Optional)" as AIAssistant
+
+rectangle "Kaluanã System" {
+
+  package "Daily Planning & Review" {
+    usecase "UC10: Plan Day" as UC_PlanDay
+    usecase "UC14: Replan Day Automatically" as UC_ReplanDay
+    usecase "UC11: Request AI Planning Suggestions" as UC_AIAssistant
+    usecase "UC17: Review End of Day" as UC_DayReview
+  }
+
+  package "Task Management" {
+    usecase "UC05: Manage Tasks & Microsteps" as UC_Tasks
+    usecase "UC15: Create Task via Natural Phrase" as UC_QuickAdd
+  }
+
+  package "Focus & Sensory Support" {
+    usecase "UC09: Run Focus Timer Session" as UC_FocusSession
+    usecase "UC16: Relax / Sleep with Soundscapes" as UC_Soundscapes
+  }
+
+  package "Self-Monitoring & Support" {
+    usecase "UC01: Log Life Event" as UC_LogEvent
+    usecase "UC03: Register Daily Check-In" as UC_CheckIn
+    usecase "UC02: Configure Insistent Reminder" as UC_Reminders
+    usecase "UC04: Register Trusted Contacts" as UC_Contacts
+  }
+
+  package "Account, Pairing & Delegation" {
+    usecase "UC12: Customize Profile" as UC_Profile
+    usecase "UC06a: Generate Pairing Code" as UC_GenCode
+    usecase "UC06b: Connect Account via Code" as UC_ConnectCode
+    usecase "UC08: Configure Per-User Access Permissions" as UC_Permissions
+    usecase "UC07: Export Non-Diagnostic PDF Report" as UC_ExportReport
+    usecase "UC_Auth: Verify Authorized Scopes" as UC_VerifyAuth
+  }
+}
+
+' --- Primary User Associations ---
+User --> UC_PlanDay
+User --> UC_DayReview
+User --> UC_Tasks
+User --> UC_FocusSession
+User --> UC_Soundscapes
+User --> UC_LogEvent
+User --> UC_CheckIn
+User --> UC_Reminders
+User --> UC_Contacts
+User --> UC_Profile
+User --> UC_GenCode
+User --> UC_Permissions
+
+' --- Responsible / Professional Associations ---
+Responsible --> UC_ConnectCode
+Responsible --> UC_ExportReport
+
+' --- Secondary Actor Associations ---
+AIAssistant --> UC_AIAssistant
+
+' --- Extend and Include Relationships ---
+UC_ReplanDay .> UC_PlanDay : <<extend>>\n(on schedule drift)
+UC_AIAssistant .> UC_PlanDay : <<extend>>\n(optional AI aid)
+UC_QuickAdd .> UC_Tasks : <<extend>>\n(phrase parser)
+
+UC_ExportReport .> UC_VerifyAuth : <<include>>
+UC_ConnectCode .> UC_VerifyAuth : <<include>>
+
+UC_FocusSession ..> UC_Tasks : <<link>>\n(optional task association)
+
+@enduml

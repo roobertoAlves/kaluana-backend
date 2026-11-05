@@ -1,0 +1,315 @@
+@startuml class-diagram
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+
+package "Identity & Access" {
+  enum UserRole {
+    PRIMARY
+    RESPONSIBLE
+  }
+
+  class User {
+    - id: UUID
+    - name: String
+    - email: String
+    - hashPassword: String
+    - role: UserRole
+    - typeSupport: String
+    - nickname: String
+    - avatarColor: String
+    - createdAt: OffsetDateTime
+    - updatedAt: OffsetDateTime
+    + updateProfile(name: String, nickname: String, avatarColor: String): void
+    + isPrimary(): boolean
+    + isResponsible(): boolean
+  }
+
+  class RefreshToken {
+    - id: UUID
+    - userId: UUID
+    - tokenHash: String
+    - expiresAt: OffsetDateTime
+    - revokedAt: OffsetDateTime
+    - createdAt: OffsetDateTime
+    + isExpired(now: OffsetDateTime): boolean
+    + isRevoked(): boolean
+    + revoke(now: OffsetDateTime): void
+  }
+}
+
+package "Pairing & Delegation" {
+  enum LinkRelationship {
+    FAMILY
+    HEALTH_PROFESSIONAL
+    OTHER
+  }
+
+  class PairingCode {
+    - id: UUID
+    - code: String
+    - primaryUserId: UUID
+    - expiresAt: OffsetDateTime
+    - used: boolean
+    - createdAt: OffsetDateTime
+    + isExpired(now: OffsetDateTime): boolean
+    + markAsUsed(): void
+  }
+
+  class ResponsibleLink {
+    - id: UUID
+    - responsibleId: UUID
+    - primaryUserId: UUID
+    - accessLevel: String
+    - relationship: LinkRelationship
+    - shareEvents: boolean
+    - shareCheckIns: boolean
+    - shareUsage: boolean
+    - shareTasks: boolean
+    - shareReports: boolean
+    - createdAt: OffsetDateTime
+    + updatePermissions(permissions: LinkPermissionsDTO): void
+    + isAuthorized(scope: String): boolean
+    + withDefaults(respId: UUID, primId: UUID, defaults: AccessSettings): ResponsibleLink
+  }
+
+  class AccessSettings {
+    - userId: UUID
+    - shareEvents: boolean
+    - shareCheckIns: boolean
+    - shareUsage: boolean
+    - shareReports: boolean
+    - updatedAt: OffsetDateTime
+    + update(events: boolean, checkIns: boolean, usage: boolean, reports: boolean): void
+  }
+
+  class FollowUpReport <<ValueObject>> {
+    - periodStart: LocalDate
+    - periodEnd: LocalDate
+    - generatedAt: OffsetDateTime
+    - events: List<LifeEvent>
+    - checkIns: List<CheckIn>
+    - usageMetrics: Map<String, Object>
+    - completedTasks: List<Task>
+    + filterByPermissions(link: ResponsibleLink): FollowUpReport
+    + exportPdf(): byte[]
+  }
+}
+
+package "Daily Planning & Tasks" {
+  enum TaskPriority {
+    LOW
+    MEDIUM
+    HIGH
+  }
+
+  enum TaskStatus {
+    TODO
+    DONE
+  }
+
+  class Task {
+    - id: UUID
+    - userId: UUID
+    - title: String
+    - priority: TaskPriority
+    - estimatedMinutes: Integer
+    - dueDate: LocalDate
+    - status: TaskStatus
+    - completedAt: OffsetDateTime
+    - createdAt: OffsetDateTime
+    - updatedAt: OffsetDateTime
+    + describe(title: String, priority: TaskPriority, minutes: Integer, due: LocalDate): void
+    + markDone(done: boolean): void
+    + addStep(text: String): TaskStep
+    + replaceSteps(steps: List<TaskStepRequestDTO>): void
+  }
+
+  class TaskStep {
+    - id: UUID
+    - text: String
+    - position: short
+    - done: boolean
+    - createdAt: OffsetDateTime
+    + setDone(done: boolean): void
+    + describe(text: String, pos: short): void
+  }
+
+  enum DayPlanSource {
+    RULES
+    ASSISTANT
+  }
+
+  enum BlockKind {
+    TASK
+    BREAK
+  }
+
+  class DayPlan {
+    - id: UUID
+    - userId: UUID
+    - planDate: LocalDate
+    - windowEnd: LocalTime
+    - source: DayPlanSource
+    - energyLevel: Integer
+    - note: String
+    - createdAt: OffsetDateTime
+    - updatedAt: OffsetDateTime
+    + replaceFrom(plan: Plan, source: DayPlanSource, energy: Integer, note: String): void
+  }
+
+  class PlannedBlock <<Embeddable>> {
+    - position: int
+    - kind: BlockKind
+    - taskId: UUID
+    - title: String
+    - startTime: LocalTime
+    - endTime: LocalTime
+    + isTask(): boolean
+    + durationMinutes(): int
+  }
+
+  class UnscheduledTask <<Embeddable>> {
+    - position: int
+    - taskId: UUID
+    - title: String
+    - minutes: int
+  }
+}
+
+package "Focus & Sensory Support" {
+  enum TimerSound {
+    NONE
+    WHITE
+    PINK
+    BROWN
+  }
+
+  enum TimerSessionStatus {
+    DONE
+    CANCELED
+  }
+
+  class TimerSession {
+    - id: UUID
+    - userId: UUID
+    - taskId: UUID
+    - task: String
+    - plannedMinutes: int
+    - stepsCount: short
+    - water: boolean
+    - sound: TimerSound
+    - status: TimerSessionStatus
+    - startedAt: OffsetDateTime
+    - finishedAt: OffsetDateTime
+    + markDone(finishedAt: OffsetDateTime): void
+    + cancel(finishedAt: OffsetDateTime): void
+  }
+}
+
+package "Self-Monitoring & Support" {
+  enum EventCategory {
+    SOCIAL
+    IMPULSIVIDADE
+    URGENCIA
+    SOBRECARGA
+  }
+
+  class LifeEvent {
+    - id: UUID
+    - userId: UUID
+    - category: EventCategory
+    - note: String
+    - urgent: boolean
+    - occurredAt: OffsetDateTime
+    - createdAt: OffsetDateTime
+    + markUrgent(urgent: boolean): void
+    + describe(cat: EventCategory, note: String, urgent: boolean, date: OffsetDateTime): void
+  }
+
+  class CheckIn {
+    - id: UUID
+    - userId: UUID
+    - day: LocalDate
+    - level: short
+    - recordedAt: OffsetDateTime
+    + record(level: int): void
+  }
+
+  enum ReminderFrequency {
+    ONCE
+    DAILY
+    WEEKLY
+  }
+
+  enum ReminderInsistence {
+    LOW
+    MEDIUM
+    HIGH
+  }
+
+  class Reminder {
+    - id: UUID
+    - userId: UUID
+    - title: String
+    - time: LocalTime
+    - leadMinutes: int
+    - frequency: ReminderFrequency
+    - insistence: ReminderInsistence
+    - enabled: boolean
+    - createdAt: OffsetDateTime
+    - updatedAt: OffsetDateTime
+    + configure(title: String, time: LocalTime, lead: int, freq: ReminderFrequency, ins: ReminderInsistence, en: boolean): void
+    + toggleEnabled(): void
+  }
+
+  enum ContactMethod {
+    LIGACAO
+    MENSAGEM
+    WHATSAPP
+    EMAIL
+  }
+
+  class TrustedContact {
+    - id: UUID
+    - userId: UUID
+    - name: String
+    - method: ContactMethod
+    - value: String
+    - createdAt: OffsetDateTime
+    + update(name: String, method: ContactMethod, val: String): void
+  }
+}
+
+' --- Persistence Foreign Key Relationships ---
+User "1" *-- "0..*" RefreshToken : "FK user_id"
+User "1" *-- "0..1" AccessSettings : "FK user_id (1:1)"
+User "1" *-- "0..*" PairingCode : "FK primary_user_id"
+User "1" <-- "0..*" ResponsibleLink : "FK primary_user_id"
+User "1" <-- "0..*" ResponsibleLink : "FK responsible_id"
+
+User "1" *-- "0..*" Task : "FK user_id"
+Task "1" *-- "0..*" TaskStep : "FK task_id"
+
+User "1" *-- "0..*" DayPlan : "FK user_id"
+DayPlan "1" *-- "0..*" PlannedBlock : "ordered element"
+DayPlan "1" *-- "0..*" UnscheduledTask : "ordered element"
+
+User "1" *-- "0..*" TimerSession : "FK user_id"
+TimerSession "0..*" --> "0..1" Task : "FK task_id (SET NULL)"
+
+User "1" *-- "0..*" LifeEvent : "FK user_id"
+User "1" *-- "0..*" CheckIn : "FK user_id"
+User "1" *-- "0..*" Reminder : "FK user_id"
+User "1" *-- "0..*" TrustedContact : "FK user_id"
+
+' --- Weak Associations / Conceptual Dependencies (No direct DB FK) ---
+PlannedBlock ..> Task : "references taskId\n(weak: no DB FK)"
+UnscheduledTask ..> Task : "references taskId\n(weak: no DB FK)"
+ResponsibleLink ..> FollowUpReport : "authorizes scopes for"
+AccessSettings ..> ResponsibleLink : "provides initial defaults"
+
+@enduml
