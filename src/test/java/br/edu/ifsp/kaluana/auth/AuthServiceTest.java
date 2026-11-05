@@ -77,7 +77,6 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(new LoginRequestDTO("ninguem@example.com", "qualquer")))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("E-mail ou senha inválidos");
-        // O BCrypt roda nos dois casos: o tempo de resposta não revela se o e-mail existe.
         verify(passwordEncoder).matches("qualquer", "hash-ficticio");
     }
 }
