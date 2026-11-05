@@ -35,7 +35,6 @@ public class RefreshToken {
     private OffsetDateTime createdAt;
 
     protected RefreshToken() {
-        // exigido pelo JPA
     }
 
     public RefreshToken(UUID userId, String tokenHash, OffsetDateTime expiresAt) {

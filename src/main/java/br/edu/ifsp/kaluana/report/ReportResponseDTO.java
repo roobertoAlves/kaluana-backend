@@ -38,7 +38,9 @@ public record ReportResponseDTO(
     public record UsageSection(
             long timerSessionsDone,
             long timerSessionsCanceled,
-            long tasksCompleted) {
+            long tasksCompleted,
+            long relaxSessions,
+            long sleepSessions) {
     }
 
     public record TasksSection(long pending, List<TaskEntry> completed) {

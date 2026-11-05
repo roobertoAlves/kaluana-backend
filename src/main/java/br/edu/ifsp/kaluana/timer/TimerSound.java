@@ -4,5 +4,9 @@ public enum TimerSound {
     NONE,
     WHITE,
     PINK,
-    BROWN
+    BROWN,
+    RAIN,
+    WAVES,
+    FIRE,
+    FOREST
 }

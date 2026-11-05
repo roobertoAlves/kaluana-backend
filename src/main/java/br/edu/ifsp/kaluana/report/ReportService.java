@@ -1,34 +1,36 @@
 package br.edu.ifsp.kaluana.report;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
-import br.edu.ifsp.kaluana.checkin.CheckInRepository;
-import br.edu.ifsp.kaluana.event.EventCategory;
-import br.edu.ifsp.kaluana.event.LifeEventRepository;
+import br.edu.ifsp.kaluana.ambient.AmbientMode;
+import br.edu.ifsp.kaluana.ambient.AmbientSessionRepository;
 import br.edu.ifsp.kaluana.pairing.PairingService;
 import br.edu.ifsp.kaluana.pairing.ResponsibleLink;
+
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.CheckInEntry;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventEntry;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.EventsSection;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.TaskEntry;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.TasksSection;
 import br.edu.ifsp.kaluana.report.ReportResponseDTO.UsageSection;
+import br.edu.ifsp.kaluana.event.EventCategory;
 import br.edu.ifsp.kaluana.task.TaskRepository;
 import br.edu.ifsp.kaluana.task.TaskStatus;
-import br.edu.ifsp.kaluana.timer.TimerSessionRepository;
 import br.edu.ifsp.kaluana.timer.TimerSessionStatus;
 import br.edu.ifsp.kaluana.user.User;
+import br.edu.ifsp.kaluana.checkin.CheckInRepository;
+import br.edu.ifsp.kaluana.event.LifeEventRepository;
+import br.edu.ifsp.kaluana.timer.TimerSessionRepository;
 import br.edu.ifsp.kaluana.user.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class ReportService {
@@ -44,6 +46,7 @@ public class ReportService {
     private final CheckInRepository checkInRepository;
     private final TimerSessionRepository timerSessionRepository;
     private final TaskRepository taskRepository;
+    private final AmbientSessionRepository ambientSessionRepository;
     private final PairingService pairingService;
 
     public ReportService(
@@ -52,12 +55,14 @@ public class ReportService {
             CheckInRepository checkInRepository,
             TimerSessionRepository timerSessionRepository,
             TaskRepository taskRepository,
+            AmbientSessionRepository ambientSessionRepository,
             PairingService pairingService) {
         this.userRepository = userRepository;
         this.lifeEventRepository = lifeEventRepository;
         this.checkInRepository = checkInRepository;
         this.timerSessionRepository = timerSessionRepository;
         this.taskRepository = taskRepository;
+        this.ambientSessionRepository = ambientSessionRepository;
         this.pairingService = pairingService;
     }
 
@@ -123,7 +128,9 @@ public class ReportService {
         return new UsageSection(
                 timerSessionRepository.countByUserIdAndStatusAndFinishedAtGreaterThanEqual(userId, TimerSessionStatus.DONE, since),
                 timerSessionRepository.countByUserIdAndStatusAndFinishedAtGreaterThanEqual(userId, TimerSessionStatus.CANCELED, since),
-                taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since));
+                taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since),
+                ambientSessionRepository.countByUserIdAndModeAndFinishedAtGreaterThanEqual(userId, AmbientMode.RELAX, since),
+                ambientSessionRepository.countByUserIdAndModeAndFinishedAtGreaterThanEqual(userId, AmbientMode.SLEEP, since));
     }
 
     private TasksSection tasksSection(UUID userId, OffsetDateTime since) {

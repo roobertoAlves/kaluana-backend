@@ -2688,6 +2688,318 @@
 			]
 		},
 		{
+			"name": "Sounds: Relax and Sleep (RF16)",
+			"item": [
+				{
+					"name": "Register Focus Session (paisagem Chuva)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/timer-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"timer-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"task\": \"Ler\",\n    \"plannedMinutes\": 15,\n    \"stepsCount\": 0,\n    \"water\": false,\n    \"sound\": \"RAIN\",\n    \"status\": \"CANCELED\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.test('paisagem salva', () => pm.expect(pm.response.json().sound).to.eql('RAIN'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Relax Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ambient-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ambient-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mode\": \"RELAX\",\n    \"sound\": \"WAVES\",\n    \"plannedMinutes\": 5,\n    \"status\": \"DONE\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.test('modo e som', () => { const s = pm.response.json(); pm.expect(s.mode).to.eql('RELAX'); pm.expect(s.sound).to.eql('WAVES'); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Sleep Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ambient-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ambient-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mode\": \"SLEEP\",\n    \"sound\": \"FOREST\",\n    \"plannedMinutes\": 30,\n    \"status\": \"CANCELED\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Sleep Session (sem som → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ambient-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ambient-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mode\": \"SLEEP\",\n    \"sound\": \"NONE\",\n    \"plannedMinutes\": 30,\n    \"status\": \"DONE\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Relax Session (modo inválido → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ambient-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ambient-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mode\": \"NAP\",\n    \"sound\": \"RAIN\",\n    \"plannedMinutes\": 5,\n    \"status\": \"DONE\",\n    \"startedAt\": \"{{startedAt}}\",\n    \"finishedAt\": \"{{finishedAt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Ambient Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ambient-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ambient-sessions"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('duas sessões', () => pm.expect(pm.response.json()).to.have.length(2));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Ambient Sessions (outra pessoa não vê)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/ambient-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ambient-sessions"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('vazio', () => pm.expect(pm.response.json()).to.have.length(0));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Access Settings (RF8)",
 			"item": [
 				{
@@ -2800,7 +3112,7 @@
 								"exec": [
 									"pm.test('status 200', () => pm.response.to.have.status(200));",
 									"const r = pm.response.json();",
-									"pm.test('todas as seções', () => { pm.expect(r.events.total).to.eql(1); pm.expect(r.checkIns.length).to.eql(1); pm.expect(r.usage.timerSessionsDone).to.eql(1); pm.expect(r.usage.tasksCompleted).to.eql(1); });",
+									"pm.test('todas as seções', () => { pm.expect(r.events.total).to.eql(1); pm.expect(r.checkIns.length).to.eql(1); pm.expect(r.usage.timerSessionsDone).to.eql(1); pm.expect(r.usage.tasksCompleted).to.eql(1); pm.expect(r.usage.relaxSessions).to.eql(1); pm.expect(r.usage.sleepSessions).to.eql(1); });",
 									"pm.test('detalhes do período', () => { pm.expect(r.events.entries).to.have.length(1); pm.expect(r.tasks.completed).to.have.length(1); });"
 								]
 							}
