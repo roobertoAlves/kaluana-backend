@@ -1,0 +1,49 @@
+@startuml focus-session-state-diagram
+skinparam monochrome false
+skinparam shadowing false
+skinparam state {
+  BackgroundColor LightYellow
+  BorderColor DarkOrange
+  ArrowColor Black
+}
+
+[*] --> IDLE : Open Focus Screen
+
+state IDLE {
+  IDLE : Configure duration
+  IDLE : Select optional task
+  IDLE : Select ambient sound
+}
+
+IDLE --> RUNNING : startSession()
+
+state RUNNING {
+  RUNNING : Timer decrements countdown
+  RUNNING : Audio loop active
+  RUNNING : Steps tracker active
+}
+
+RUNNING --> PAUSED : pauseSession()
+PAUSED --> RUNNING : resumeSession()
+
+RUNNING --> RUNNING : addTime(+1 min)
+PAUSED --> PAUSED : addTime(+1 min)
+
+RUNNING --> COMPLETED : timer reaches 00:00
+RUNNING --> CANCELED : cancelSession()
+PAUSED --> CANCELED : cancelSession()
+
+state COMPLETED {
+  COMPLETED : Play soft finish chime
+  COMPLETED : Persist TimerSession(status=DONE)
+}
+
+state CANCELED {
+  CANCELED : Stop audio
+  CANCELED : Persist TimerSession(status=CANCELED)
+}
+
+COMPLETED --> [*] : Return to Home / Tasks
+CANCELED --> [*] : Return to Home / Tasks
+
+@enduml

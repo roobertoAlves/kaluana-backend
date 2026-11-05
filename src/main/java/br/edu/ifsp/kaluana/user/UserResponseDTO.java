@@ -9,7 +9,8 @@ public record UserResponseDTO(
     String email,
     String role,
     String nickname,
-    String avatarColor
+    String avatarColor,
+    boolean emailVerified
 ){
     public static UserResponseDTO from(User user){
         return new UserResponseDTO(
@@ -18,6 +19,7 @@ public record UserResponseDTO(
                 user.getEmail(),
                 user.getRole().name(),
                 user.getNickname(),
-                user.getAvatarColor());
+                user.getAvatarColor(),
+                user.isEmailVerified());
     }
 }

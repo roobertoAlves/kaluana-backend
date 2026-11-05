@@ -1,11 +1,18 @@
 package br.edu.ifsp.kaluana.plan;
 
-import br.edu.ifsp.kaluana.assistant.AssistantService;
-import br.edu.ifsp.kaluana.checkin.CheckInService;
-import br.edu.ifsp.kaluana.plan.DayPlanResponseDTO.Source;
-import br.edu.ifsp.kaluana.task.Task;
-import br.edu.ifsp.kaluana.task.TaskPriority;
-import br.edu.ifsp.kaluana.task.TaskService;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,18 +22,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import br.edu.ifsp.kaluana.assistant.AssistantService;
+import br.edu.ifsp.kaluana.checkin.CheckInService;
+import br.edu.ifsp.kaluana.plan.DayPlanResponseDTO.Source;
+import br.edu.ifsp.kaluana.task.Task;
+import br.edu.ifsp.kaluana.task.TaskPriority;
+import br.edu.ifsp.kaluana.task.TaskService;
 
 @ExtendWith(MockitoExtension.class)
 class DayPlanServiceTest {
@@ -62,7 +63,6 @@ class DayPlanServiceTest {
     void deveUsarAOrdemDoAssistenteSemPerderTarefasOmitidas() {
         when(taskService.plannableFor(USER_ID, DAY)).thenReturn(List.of(task("A", 10), task("B", 20), task("C", 30)));
         when(checkInService.levelOn(USER_ID, DAY)).thenReturn(Optional.of(3));
-        // Regras: A, B, C (mesma prioridade, mais curta antes). Assistente sugere só C.
         when(assistantService.suggestOrder(eq(USER_ID), anyList(), eq(3))).thenReturn(Optional.of(List.of(2)));
 
         DayPlanResponseDTO plan = service.plan(USER_ID, DAY, LocalTime.of(9, 0), LocalTime.of(18, 0), true);

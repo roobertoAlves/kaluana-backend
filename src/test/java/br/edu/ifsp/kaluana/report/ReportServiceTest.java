@@ -11,6 +11,8 @@ import br.edu.ifsp.kaluana.task.TaskRepository;
 import br.edu.ifsp.kaluana.event.LifeEventRepository;
 import br.edu.ifsp.kaluana.timer.TimerSessionRepository;
 import br.edu.ifsp.kaluana.user.UserRepository;
+import br.edu.ifsp.kaluana.ambient.AmbientSessionRepository;
+
 import br.edu.ifsp.kaluana.pairing.PairingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,14 +56,23 @@ class ReportServiceTest {
     private TaskRepository taskRepository;
 
     @Mock
+    private AmbientSessionRepository ambientSessionRepository;
+
+    @Mock
     private PairingService pairingService;
 
     private ReportService reportService;
 
     @BeforeEach
     void setUp() {
-        reportService = new ReportService(userRepository, lifeEventRepository, checkInRepository,
-                timerSessionRepository, taskRepository, pairingService);
+        reportService = new ReportService(
+                userRepository,
+                lifeEventRepository,
+                checkInRepository,
+                timerSessionRepository,
+                taskRepository,
+                ambientSessionRepository,
+                pairingService);
     }
 
     @Test

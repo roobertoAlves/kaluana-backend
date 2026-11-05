@@ -1,9 +1,9 @@
 package br.edu.ifsp.kaluana.event;
 
+import java.time.OffsetDateTime;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.time.OffsetDateTime;
 
 public record LifeEventRequestDTO(
 
@@ -15,7 +15,6 @@ public record LifeEventRequestDTO(
 
         boolean urgent,
 
-        // Opcional: se vier vazio (ou no futuro), vale o horário do servidor.
         OffsetDateTime timestamp
 ) {
 }

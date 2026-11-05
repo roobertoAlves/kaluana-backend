@@ -1,8 +1,5 @@
 package br.edu.ifsp.kaluana.plan;
 
-import br.edu.ifsp.kaluana.task.TaskPriority;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -10,11 +7,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * RF10 / RNF1: monta o plano do dia por regras fixas. Função pura: as mesmas
- * entradas dão sempre o mesmo plano, sem relógio, banco ou serviço externo.
- * As regras estão descritas no Apêndice "Modelo Comportamental" do relatório.
- */
+import org.springframework.stereotype.Component;
+
+import br.edu.ifsp.kaluana.task.TaskPriority;
+
 @Component
 public class DayPlanner {
 
@@ -36,7 +32,6 @@ public class DayPlanner {
     public record Plan(List<Block> blocks, List<PlannableTask> unscheduled) {
     }
 
-    /** Ordem sugerida pelas regras: atrasadas, do dia, e depois conforme o nível do check-in. */
     public List<PlannableTask> order(List<PlannableTask> tasks, LocalDate day, Integer energyLevel) {
         Comparator<PlannableTask> byUrgency = Comparator.comparingInt(task -> urgencyRank(task, day));
         Comparator<PlannableTask> byPriority = Comparator.comparing(PlannableTask::priority).reversed();
@@ -44,7 +39,6 @@ public class DayPlanner {
 
         Comparator<PlannableTask> byEnergy;
         if (energyLevel != null && energyLevel <= 2) {
-            // Dia difícil: começar pelo que é curto facilita o primeiro passo.
             byEnergy = shorterFirst.thenComparing(byPriority);
         } else if (energyLevel != null && energyLevel >= 4) {
             byEnergy = byPriority.thenComparing(shorterFirst.reversed());
@@ -54,21 +48,15 @@ public class DayPlanner {
 
         return tasks.stream()
                 .sorted(byUrgency.thenComparing(byEnergy)
-                        // Desempate estável, para o plano não "pular" entre chamadas.
                         .thenComparing(PlannableTask::title, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(PlannableTask::id))
                 .toList();
     }
 
-    /** Distribui as tarefas, já ordenadas, na janela [start, end], com pausas entre elas. */
     public Plan layout(List<PlannableTask> ordered, LocalTime start, LocalTime end) {
         return layout(List.of(), ordered, start, end);
     }
 
-    /**
-     * Como o anterior, mas depois de blocos já fixados que terminam em
-     * {@code start} (ex.: o bloco em andamento, no replanejamento).
-     */
     public Plan layout(List<Block> fixed, List<PlannableTask> ordered, LocalTime start, LocalTime end) {
         List<Block> blocks = new ArrayList<>(fixed);
         List<PlannableTask> unscheduled = new ArrayList<>();
@@ -79,7 +67,6 @@ public class DayPlanner {
             boolean needsBreak = !blocks.isEmpty();
             int needed = task.minutes() + (needsBreak ? BREAK_MINUTES : 0);
             if (cursor + needed > limit) {
-                // Não cabe: vai para a lista à parte, mas tarefas menores ainda podem caber depois.
                 unscheduled.add(task);
                 continue;
             }

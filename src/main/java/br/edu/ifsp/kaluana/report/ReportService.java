@@ -1,5 +1,7 @@
 package br.edu.ifsp.kaluana.report;
 
+import br.edu.ifsp.kaluana.ambient.AmbientMode;
+import br.edu.ifsp.kaluana.ambient.AmbientSessionRepository;
 import br.edu.ifsp.kaluana.pairing.PairingService;
 import br.edu.ifsp.kaluana.pairing.ResponsibleLink;
 
@@ -30,12 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * RF7: relatório informativo. Só conta e lista o que foi registrado; não
- * calcula pontuação, não classifica e não sugere nada (RNF6, diretriz NICE).
- * Para quem está vinculado, cada seção só entra se o usuário autorizou para
- * aquela pessoa (RF8/RNF3); é essa versão que o especialista exporta em PDF.
- */
 @Service
 public class ReportService {
 
@@ -50,6 +46,7 @@ public class ReportService {
     private final CheckInRepository checkInRepository;
     private final TimerSessionRepository timerSessionRepository;
     private final TaskRepository taskRepository;
+    private final AmbientSessionRepository ambientSessionRepository;
     private final PairingService pairingService;
 
     public ReportService(
@@ -58,27 +55,26 @@ public class ReportService {
             CheckInRepository checkInRepository,
             TimerSessionRepository timerSessionRepository,
             TaskRepository taskRepository,
+            AmbientSessionRepository ambientSessionRepository,
             PairingService pairingService) {
         this.userRepository = userRepository;
         this.lifeEventRepository = lifeEventRepository;
         this.checkInRepository = checkInRepository;
         this.timerSessionRepository = timerSessionRepository;
         this.taskRepository = taskRepository;
+        this.ambientSessionRepository = ambientSessionRepository;
         this.pairingService = pairingService;
     }
 
-    /** Relatório da própria pessoa: todas as seções. */
     @Transactional(readOnly = true)
     public ReportResponseDTO ownReport(UUID userId, int days) {
         validatePeriod(days);
         return build(findUser(userId), days, Scope.EVERYTHING, null, null);
     }
 
-    /** Relatório de quem está emparelhado com o responsável, filtrado pelo que o vínculo autoriza. */
     @Transactional(readOnly = true)
     public ReportResponseDTO linkedReport(UUID responsibleId, UUID primaryUserId, int days) {
         validatePeriod(days);
-        // 404 e não 403: não confirma para terceiros que a pessoa existe.
         ResponsibleLink link = pairingService.findLink(responsibleId, primaryUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
         if (!link.isShareReports()) {
@@ -132,7 +128,9 @@ public class ReportService {
         return new UsageSection(
                 timerSessionRepository.countByUserIdAndStatusAndFinishedAtGreaterThanEqual(userId, TimerSessionStatus.DONE, since),
                 timerSessionRepository.countByUserIdAndStatusAndFinishedAtGreaterThanEqual(userId, TimerSessionStatus.CANCELED, since),
-                taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since));
+                taskRepository.countByUserIdAndStatusAndCompletedAtGreaterThanEqual(userId, TaskStatus.DONE, since),
+                ambientSessionRepository.countByUserIdAndModeAndFinishedAtGreaterThanEqual(userId, AmbientMode.RELAX, since),
+                ambientSessionRepository.countByUserIdAndModeAndFinishedAtGreaterThanEqual(userId, AmbientMode.SLEEP, since));
     }
 
     private TasksSection tasksSection(UUID userId, OffsetDateTime since) {
@@ -154,7 +152,6 @@ public class ReportService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
     }
 
-    /** Quais seções entram no relatório. */
     private record Scope(boolean events, boolean checkIns, boolean usage, boolean tasks) {
 
         static final Scope EVERYTHING = new Scope(true, true, true, true);

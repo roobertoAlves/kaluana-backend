@@ -53,4 +53,16 @@ class TaskTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("não encontrada");
     }
+
+    @Test
+    void naoDeveRemarcarTarefaConcluida() {
+        Task task = new Task(UUID.randomUUID());
+        task.reschedule(java.time.LocalDate.of(2026, 11, 3));
+        assertThat(task.getDueDate()).isEqualTo(java.time.LocalDate.of(2026, 11, 3));
+
+        task.markDone(true);
+        assertThatThrownBy(() -> task.reschedule(null))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("já foi concluída");
+    }
 }

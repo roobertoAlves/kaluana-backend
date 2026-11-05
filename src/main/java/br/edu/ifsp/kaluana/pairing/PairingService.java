@@ -1,13 +1,5 @@
 package br.edu.ifsp.kaluana.pairing;
 
-import br.edu.ifsp.kaluana.access.AccessSettingsService;
-import br.edu.ifsp.kaluana.user.User;
-import br.edu.ifsp.kaluana.user.UserRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -17,10 +9,18 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import br.edu.ifsp.kaluana.access.AccessSettingsService;
+import br.edu.ifsp.kaluana.user.User;
+import br.edu.ifsp.kaluana.user.UserRepository;
+
 @Service
 public class PairingService {
 
-    // Sem O/0/I/1, para não confundir quem está digitando o código à mão.
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int CODE_LENGTH = 6;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -59,12 +59,7 @@ public class PairingService {
         return new ValidateCodeResponseDTO(true, primaryUser.getName());
     }
 
-    /**
-     * Revalida e consome o código de forma atômica. Quem chama este método
-     * (AuthService) faz isso dentro da mesma transação em que cria a conta do
-     * responsável, então, se o cadastro falhar depois, o código volta a ficar
-     * disponível (rollback), em vez de ser desperdiçado.
-     */
+
     @Transactional
     public UUID consumeCode(String code) {
         PairingCode pairingCode = findValidCode(code);
@@ -81,7 +76,6 @@ public class PairingService {
         }
     }
 
-    /** Vínculos de quem está logado, com o nome de quem está do outro lado. */
     @Transactional(readOnly = true)
     public List<LinkedUserResponseDTO> listLinks(UUID userId) {
         List<ResponsibleLink> links = responsibleLinkRepository.findAllInvolving(userId);
@@ -100,7 +94,6 @@ public class PairingService {
                 .toList();
     }
 
-    /** Qualquer um dos lados pode desfazer o vínculo (o principal revoga, o responsável sai). */
     @Transactional
     public void unlink(UUID userId, UUID otherUserId) {
         ResponsibleLink link = responsibleLinkRepository.findAllInvolving(userId).stream()
@@ -110,7 +103,6 @@ public class PairingService {
         responsibleLinkRepository.delete(link);
     }
 
-    /** RF8: o principal define o que cada pessoa vinculada pode ver. */
     @Transactional
     public LinkPermissionsDTO updatePermissions(UUID primaryUserId, UUID responsibleId, LinkPermissionsDTO permissions) {
         ResponsibleLink link = findLink(responsibleId, primaryUserId)

@@ -1,11 +1,10 @@
 package br.edu.ifsp.kaluana.access;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
-/** RF8: preferências de compartilhamento do usuário principal. */
 @Service
 public class AccessSettingsService {
 
@@ -27,7 +26,6 @@ public class AccessSettingsService {
         return AccessSettingsDTO.from(accessSettingsRepository.save(settings));
     }
 
-    /** Usado por outros serviços (ex.: relatório) para aplicar o RNF3. */
     @Transactional(readOnly = true)
     public AccessSettings find(UUID userId) {
         return accessSettingsRepository.findById(userId)

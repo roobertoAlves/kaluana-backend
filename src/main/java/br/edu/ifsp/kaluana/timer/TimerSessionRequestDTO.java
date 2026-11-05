@@ -1,5 +1,8 @@
 package br.edu.ifsp.kaluana.timer;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -7,12 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
 public record TimerSessionRequestDTO(
 
-        // Opcional: tarefa (RF5) que originou a sessão.
         UUID taskId,
 
         @NotBlank(message = "Informe a tarefa.")
@@ -29,14 +28,11 @@ public record TimerSessionRequestDTO(
 
         boolean water,
 
-        // Ausente = sem som.
         TimerSound sound,
 
         @NotNull(message = "Informe como a sessão terminou.")
         TimerSessionStatus status,
 
-        // Horários vêm do relógio do aparelho; não validamos "no futuro" para
-        // não rejeitar sessões de quem está com o relógio um pouco adiantado.
         @NotNull(message = "Informe o início da sessão.")
         OffsetDateTime startedAt,
 

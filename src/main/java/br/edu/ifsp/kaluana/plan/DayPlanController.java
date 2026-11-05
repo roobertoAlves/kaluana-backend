@@ -1,6 +1,9 @@
 package br.edu.ifsp.kaluana.plan;
 
-import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.UUID;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,14 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.UUID;
+import jakarta.validation.Valid;
 
-/**
- * RF10 / RF14 · /api/day-plan. A data e os horários vêm do aparelho porque o
- * servidor não sabe o fuso do usuário (ex.: start = agora, no horário local).
- */
+
 @RestController
 @RequestMapping("/api/day-plan")
 public class DayPlanController {
@@ -30,7 +28,6 @@ public class DayPlanController {
         this.dayPlanService = dayPlanService;
     }
 
-    /** Pré-visualização: monta o plano sem salvar. */
     @GetMapping
     public DayPlanResponseDTO plan(
             @AuthenticationPrincipal UUID userId,

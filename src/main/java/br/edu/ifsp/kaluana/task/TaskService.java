@@ -1,17 +1,16 @@
 package br.edu.ifsp.kaluana.task;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** RF5: tarefas e microetapas do usuário. Toda busca é filtrada pelo dono. */
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 @Service
 public class TaskService {
 
@@ -55,7 +54,6 @@ public class TaskService {
     public TaskResponseDTO addStep(UUID userId, UUID taskId, TaskStepRequestDTO request) {
         Task task = findOwned(userId, taskId);
         task.addStep(request.text().trim());
-        // saveAndFlush para o id gerado da etapa já sair na resposta.
         return TaskResponseDTO.from(taskRepository.saveAndFlush(task));
     }
 
@@ -73,25 +71,32 @@ public class TaskService {
         return TaskResponseDTO.from(task);
     }
 
-    /** Pendentes que entram no plano de {@code day} (RF10). */
     @Transactional(readOnly = true)
     public List<Task> plannableFor(UUID userId, LocalDate day) {
         return taskRepository.findPlannable(userId, day);
     }
 
-    /** Quais destas tarefas do usuário estão concluídas (RF14: "concluída" x "removida"). */
+    @Transactional
+    public void applyReview(UUID userId, UUID taskId, ReviewAction action, LocalDate reviewedDay) {
+        Task task = findOwned(userId, taskId);
+        switch (action) {
+            case TOMORROW -> task.reschedule(reviewedDay.plusDays(1));
+            case NO_DATE -> task.reschedule(null);
+            case DONE -> task.markDone(true);
+        }
+    }
+
+
     @Transactional(readOnly = true)
     public Set<UUID> doneAmong(UUID userId, Collection<UUID> taskIds) {
         return taskIds.isEmpty() ? Set.of() : Set.copyOf(taskRepository.findDoneIds(userId, taskIds));
     }
 
-    /** Só o título: é o único dado da tarefa enviado ao assistente de IA (RNF7). */
     @Transactional(readOnly = true)
     public String titleOf(UUID userId, UUID taskId) {
         return findOwned(userId, taskId).getTitle();
     }
 
-    /** Usado por outros módulos (ex.: sessão de foco) para validar o vínculo com uma tarefa. */
     @Transactional(readOnly = true)
     public void ensureOwned(UUID userId, UUID taskId) {
         if (!taskRepository.existsByIdAndUserId(taskId, userId)) {
