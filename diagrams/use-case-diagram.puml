@@ -1,14 +1,22 @@
 @startuml use-case-diagram
+left to right direction
 skinparam monochrome false
 skinparam shadowing false
 skinparam packageStyle rectangle
 skinparam linetype polyline
+skinparam nodesep 50
+skinparam ranksep 60
 
 actor "Usuário Principal\n(Pessoa com TDAH)" as User
 actor "Responsável / Profissional\n(Familiar ou Especialista)" as Responsible
 actor "Assistente de IA\n(Serviço Opcional)" as AIAssistant
 
 rectangle "Sistema Kaluanã" {
+
+  package "Identidade e Conta" {
+    usecase "UC12: Personalizar Perfil" as UC_Profile
+    usecase "UC_Mail: Confirmar E-mail no Cadastro" as UC_EmailConfirm
+  }
 
   package "Planejamento e Rotina Diária" {
     usecase "UC10: Planejar o Dia Determinístico" as UC_PlanDay
@@ -34,17 +42,23 @@ rectangle "Sistema Kaluanã" {
     usecase "UC04: Cadastrar Contatos de Confiança" as UC_Contacts
   }
 
-  package "Conta, Emparelhamento e Delegação" {
-    usecase "UC12: Personalizar Perfil" as UC_Profile
+  package "Emparelhamento" {
     usecase "UC06a: Gerar Código de Emparelhamento" as UC_GenCode
     usecase "UC06b: Vincular Conta via Código" as UC_ConnectCode
+  }
+
+  package "Consentimento" {
     usecase "UC08: Configurar Permissões de Acesso por Pessoa" as UC_Permissions
-    usecase "UC07: Exportar Relatório Não Diagnóstico em PDF" as UC_ExportReport
     usecase "UC_Auth: Validar Permissões Autorizadas" as UC_VerifyAuth
-    usecase "UC_Mail: Confirmar E-mail no Cadastro" as UC_EmailConfirm
+  }
+
+  package "Relatório" {
+    usecase "UC07: Exportar Relatório Não Diagnóstico em PDF" as UC_ExportReport
   }
 }
 
+User --> UC_Profile
+User --> UC_EmailConfirm
 User --> UC_PlanDay
 User --> UC_DayReview
 User --> UC_Tasks
@@ -54,10 +68,8 @@ User --> UC_LogEvent
 User --> UC_CheckIn
 User --> UC_Reminders
 User --> UC_Contacts
-User --> UC_Profile
 User --> UC_GenCode
 User --> UC_Permissions
-User --> UC_EmailConfirm
 
 Responsible --> UC_ConnectCode
 Responsible --> UC_ExportReport
