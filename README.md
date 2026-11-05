@@ -21,11 +21,17 @@ Para rodar sem Docker, apenas a API na máquina:
 
 ## 2. Configuração
 
-Copie o modelo de variáveis de ambiente e preencha os valores:
+Para desenvolvimento, nenhuma configuração é obrigatória: o
+`docker-compose.yml` já traz valores padrão (banco, Redis, segredo do JWT e
+CORS), então basta ir para a seção 3. Para mudar algum valor, crie um `.env`
+a partir do modelo; o que estiver nele tem prioridade sobre o padrão:
 
 ```bash
 cp .env.example .env
 ```
+
+O segredo padrão serve apenas para desenvolvimento local. Em produção use o
+`docker-compose.prod.yml`, que exige todos os valores.
 
 | Variável | Para que serve |
 | --- | --- |
@@ -73,6 +79,29 @@ docker compose down
 
 O `down` para os contêineres e mantém os dados. Para apagar também o banco,
 use `docker compose down -v`.
+
+### Testar em outra máquina (por exemplo, Linux na faculdade)
+
+Com Docker, Node e os dois repositórios clonados, sem criar nenhum arquivo:
+
+```bash
+docker compose up -d --build
+```
+
+E, na pasta do `kaluana-frontend`:
+
+```bash
+npm ci
+```
+
+```bash
+npm start
+```
+
+Aperte `s` para o Expo Go e leia o QR code com o celular na mesma rede
+Wi-Fi. O aplicativo encontra a API sozinho (mesmo computador, porta 8080).
+No Linux, se o `docker` pedir permissão, use `sudo docker compose ...`; se
+houver firewall ativo, libere a porta (por exemplo, `sudo ufw allow 8080/tcp`).
 
 ### Produção (HTTPS)
 
