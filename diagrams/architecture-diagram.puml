@@ -43,7 +43,7 @@ package "Backend Core (Spring Boot)" {
 
 database "Persistence Layer" {
   database "PostgreSQL 16" as Postgres {
-    [Relational Tables\n(Flyway V1..V13)] as Schema
+    [Relational Tables\n(Flyway V1..V16)] as Schema
   }
   database "Redis 7" as Redis {
     [Rate Limits &\nSession Blacklist] as RedisData

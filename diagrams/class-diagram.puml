@@ -2,11 +2,13 @@
 skinparam classAttributeIconSize 0
 skinparam monochrome false
 skinparam shadowing false
-skinparam linetype ortho
-skinparam nodesep 60
-skinparam ranksep 60
+skinparam linetype polyline
+skinparam nodesep 90
+skinparam ranksep 90
+skinparam packagePadding 20
+skinparam classPadding 8
 
-package "Identidade e Acesso" {
+package "Identidade e Autenticação" {
   enum UserRole {
     PRIMARY
     RESPONSIBLE
@@ -127,7 +129,7 @@ package "Automonitoramento e Apoio" {
   }
 }
 
-package "Planejamento e Gestão de Tarefas" {
+package "Gestão de Tarefas e Planejamento" {
   enum TaskPriority {
     LOW
     MEDIUM
@@ -283,7 +285,19 @@ package "Foco e Bem-Estar Sensorial" {
   }
 }
 
-package "Emparelhamento, Consentimento e Relatório" {
+package "Consentimento" {
+  class AccessSettings {
+    - userId: UUID
+    - shareEvents: boolean
+    - shareCheckIns: boolean
+    - shareUsage: boolean
+    - shareReports: boolean
+    - updatedAt: OffsetDateTime
+    + update(events: boolean, checkIns: boolean, usage: boolean, reports: boolean): void
+  }
+}
+
+package "Emparelhamento" {
   enum LinkRelationship {
     FAMILY
     HEALTH_PROFESSIONAL
@@ -317,17 +331,9 @@ package "Emparelhamento, Consentimento e Relatório" {
     + isAuthorized(scope: String): boolean
     + withDefaults(respId: UUID, primId: UUID, defaults: AccessSettings): ResponsibleLink
   }
+}
 
-  class AccessSettings {
-    - userId: UUID
-    - shareEvents: boolean
-    - shareCheckIns: boolean
-    - shareUsage: boolean
-    - shareReports: boolean
-    - updatedAt: OffsetDateTime
-    + update(events: boolean, checkIns: boolean, usage: boolean, reports: boolean): void
-  }
-
+package "Relatório de Acompanhamento" {
   class FollowUpReport <<ValueObject>> {
     - periodStart: LocalDate
     - periodEnd: LocalDate
@@ -357,11 +363,11 @@ DayPlan "1" *-down- "0..*" PlannedBlock : "composição interna"
 DayPlan "1" *-down- "0..*" UnscheduledTask : "composição interna"
 DayPlan "0..*" .right.> "0..*" Task : "aloca tarefas"
 DayReview "0..*" .up.> "0..*" Task : "atualiza tarefas do dia"
-TimerSession "0..*" -up-> "0..1" Task : "FK task_id (opcional)"
+TimerSession "0..*" -left-> "0..1" Task : "FK task_id (opcional)"
 
 User "1" -down-> "0..*" PairingCode : "gera código"
-PairingCode .right.> ResponsibleLink : "estabelece vínculo"
-AccessSettings "1" .down.> "0..*" ResponsibleLink : "permissões padrão"
+PairingCode -down-> ResponsibleLink : "estabelece vínculo"
+AccessSettings "1" .right.> "0..*" ResponsibleLink : "permissões padrão"
 ResponsibleLink "1" .right.> "0..*" FollowUpReport : "autoriza escopos"
 
 @enduml
