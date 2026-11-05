@@ -6,7 +6,7 @@ skinparam linetype ortho
 skinparam nodesep 50
 skinparam ranksep 50
 
-package "Identity & Access" {
+package "Identidade e Acesso" {
   enum UserRole {
     PRIMARY
     RESPONSIBLE
@@ -21,6 +21,7 @@ package "Identity & Access" {
     - typeSupport: String
     - nickname: String
     - avatarColor: String
+    - emailVerified: boolean
     - createdAt: OffsetDateTime
     - updatedAt: OffsetDateTime
     + updateProfile(name: String, nickname: String, avatarColor: String): void
@@ -39,9 +40,20 @@ package "Identity & Access" {
     + isRevoked(): boolean
     + revoke(now: OffsetDateTime): void
   }
+
+  class EmailVerificationToken {
+    - id: UUID
+    - userId: UUID
+    - tokenHash: String
+    - expiresAt: OffsetDateTime
+    - used: boolean
+    - createdAt: OffsetDateTime
+    + isExpired(now: OffsetDateTime): boolean
+    + markAsUsed(): void
+  }
 }
 
-package "Pairing & Delegation" {
+package "Emparelhamento e Delegação" {
   enum LinkRelationship {
     FAMILY
     HEALTH_PROFESSIONAL
@@ -99,7 +111,7 @@ package "Pairing & Delegation" {
   }
 }
 
-package "Daily Planning & Tasks" {
+package "Planejamento e Gestão de Tarefas" {
   enum TaskPriority {
     LOW
     MEDIUM
@@ -126,6 +138,7 @@ package "Daily Planning & Tasks" {
     + markDone(done: boolean): void
     + addStep(text: String): TaskStep
     + replaceSteps(steps: List<TaskStepRequestDTO>): void
+    + reschedule(newDate: LocalDate): void
   }
 
   class TaskStep {
@@ -159,6 +172,7 @@ package "Daily Planning & Tasks" {
     - createdAt: OffsetDateTime
     - updatedAt: OffsetDateTime
     + replaceFrom(plan: Plan, source: DayPlanSource, energy: Integer, note: String): void
+    + replan(now: LocalTime): void
   }
 
   class PlannedBlock <<Embeddable>> {
@@ -178,14 +192,37 @@ package "Daily Planning & Tasks" {
     - title: String
     - minutes: int
   }
+
+  enum DayFeeling {
+    LOW
+    NEUTRAL
+    GOOD
+  }
+
+  class DayReview {
+    - id: UUID
+    - userId: UUID
+    - reviewDate: LocalDate
+    - feeling: DayFeeling
+    - carriedToTomorrow: int
+    - movedToUnscheduled: int
+    - completedCount: int
+    - createdAt: OffsetDateTime
+    - updatedAt: OffsetDateTime
+    + applyDecisions(actions: List<TaskActionDTO>): void
+  }
 }
 
-package "Focus & Sensory Support" {
+package "Foco e Paisagens Sonoras" {
   enum TimerSound {
     NONE
     WHITE
     PINK
     BROWN
+    RAIN
+    WAVES
+    FIRE
+    FOREST
   }
 
   enum TimerSessionStatus {
@@ -208,9 +245,26 @@ package "Focus & Sensory Support" {
     + markDone(finishedAt: OffsetDateTime): void
     + cancel(finishedAt: OffsetDateTime): void
   }
+
+  enum AmbientMode {
+    RELAX
+    SLEEP
+  }
+
+  class AmbientSession {
+    - id: UUID
+    - userId: UUID
+    - mode: AmbientMode
+    - sound: TimerSound
+    - plannedMinutes: int
+    - status: TimerSessionStatus
+    - startedAt: OffsetDateTime
+    - finishedAt: OffsetDateTime
+    + complete(finishedAt: OffsetDateTime): void
+  }
 }
 
-package "Self-Monitoring & Support" {
+package "Automonitoramento e Apoio" {
   enum EventCategory {
     SOCIAL
     IMPULSIVIDADE
@@ -284,32 +338,36 @@ package "Self-Monitoring & Support" {
   }
 }
 
-' --- Persistence Foreign Key Relationships ---
+' --- Relacionamentos Fortes de Persistência (Foreign Keys do PostgreSQL) ---
 User "1" *-- "0..*" RefreshToken : "FK user_id"
+User "1" *-- "0..*" EmailVerificationToken : "FK user_id"
 User "1" *-- "0..1" AccessSettings : "FK user_id (1:1)"
 User "1" *-- "0..*" PairingCode : "FK primary_user_id"
 User "1" <-- "0..*" ResponsibleLink : "FK primary_user_id"
 User "1" <-- "0..*" ResponsibleLink : "FK responsible_id"
 
 User "1" *-- "0..*" Task : "FK user_id"
-Task "1" *-- "0..*" TaskStep : "FK task_id"
+Task "1" *-- "0..*" TaskStep : "FK task_id (composição)"
 
 User "1" *-- "0..*" DayPlan : "FK user_id"
-DayPlan "1" *-- "0..*" PlannedBlock : "ordered element"
-DayPlan "1" *-- "0..*" UnscheduledTask : "ordered element"
+DayPlan "1" *-- "0..*" PlannedBlock : "elemento ordenado"
+DayPlan "1" *-- "0..*" UnscheduledTask : "elemento ordenado"
+User "1" *-- "0..*" DayReview : "FK user_id"
 
 User "1" *-- "0..*" TimerSession : "FK user_id"
 TimerSession "0..*" --> "0..1" Task : "FK task_id (SET NULL)"
+User "1" *-- "0..*" AmbientSession : "FK user_id"
 
 User "1" *-- "0..*" LifeEvent : "FK user_id"
 User "1" *-- "0..*" CheckIn : "FK user_id"
 User "1" *-- "0..*" Reminder : "FK user_id"
 User "1" *-- "0..*" TrustedContact : "FK user_id"
 
-' --- Weak Associations / Conceptual Dependencies (No direct DB FK) ---
-PlannedBlock ..> Task : "references taskId\n(weak: no DB FK)"
-UnscheduledTask ..> Task : "references taskId\n(weak: no DB FK)"
-ResponsibleLink ..> FollowUpReport : "authorizes scopes for"
-AccessSettings ..> ResponsibleLink : "provides initial defaults"
+' --- Associações Fracas / Dependências Conceituais (Sem FK no Banco) ---
+PlannedBlock ..> Task : "referencia taskId\n(associação fraca: sem FK no banco)"
+UnscheduledTask ..> Task : "referencia taskId\n(associação fraca: sem FK no banco)"
+DayReview ..> Task : "atualiza tarefas do dia\n(em lote transacional)"
+ResponsibleLink ..> FollowUpReport : "autoriza escopos para visualização"
+AccessSettings ..> ResponsibleLink : "fornece permissões padrão iniciais"
 
 @enduml
