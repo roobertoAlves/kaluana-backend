@@ -45,7 +45,6 @@ rectangle "Sistema Kaluanã" {
   }
 }
 
-' --- Associações do Usuário Principal ---
 User --> UC_PlanDay
 User --> UC_DayReview
 User --> UC_Tasks
@@ -60,14 +59,11 @@ User --> UC_GenCode
 User --> UC_Permissions
 User --> UC_EmailConfirm
 
-' --- Associações do Responsável / Profissional ---
 Responsible --> UC_ConnectCode
 Responsible --> UC_ExportReport
 
-' --- Associações de Atores Secundários ---
 AIAssistant --> UC_AIAssistant
 
-' --- Relações de Extensão e Inclusão ---
 UC_ReplanDay .> UC_PlanDay : <<extend>>\n(ao detectar desvios na rotina)
 UC_AIAssistant .> UC_PlanDay : <<extend>>\n(sugestão opcional da IA)
 UC_QuickAdd .> UC_Tasks : <<extend>>\n(parser de texto natural)

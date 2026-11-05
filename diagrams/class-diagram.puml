@@ -3,8 +3,8 @@ skinparam classAttributeIconSize 0
 skinparam monochrome false
 skinparam shadowing false
 skinparam linetype ortho
-skinparam nodesep 50
-skinparam ranksep 50
+skinparam nodesep 60
+skinparam ranksep 60
 
 package "Identidade e Acesso" {
   enum UserRole {
@@ -53,61 +53,77 @@ package "Identidade e Acesso" {
   }
 }
 
-package "Emparelhamento e Delegação" {
-  enum LinkRelationship {
-    FAMILY
-    HEALTH_PROFESSIONAL
-    OTHER
+package "Automonitoramento e Apoio" {
+  enum EventCategory {
+    SOCIAL
+    IMPULSIVIDADE
+    URGENCIA
+    SOBRECARGA
   }
 
-  class PairingCode {
+  class LifeEvent {
     - id: UUID
-    - code: String
-    - primaryUserId: UUID
-    - expiresAt: OffsetDateTime
-    - used: boolean
-    - createdAt: OffsetDateTime
-    + isExpired(now: OffsetDateTime): boolean
-    + markAsUsed(): void
-  }
-
-  class ResponsibleLink {
-    - id: UUID
-    - responsibleId: UUID
-    - primaryUserId: UUID
-    - accessLevel: String
-    - relationship: LinkRelationship
-    - shareEvents: boolean
-    - shareCheckIns: boolean
-    - shareUsage: boolean
-    - shareTasks: boolean
-    - shareReports: boolean
-    - createdAt: OffsetDateTime
-    + updatePermissions(permissions: LinkPermissionsDTO): void
-    + isAuthorized(scope: String): boolean
-    + withDefaults(respId: UUID, primId: UUID, defaults: AccessSettings): ResponsibleLink
-  }
-
-  class AccessSettings {
     - userId: UUID
-    - shareEvents: boolean
-    - shareCheckIns: boolean
-    - shareUsage: boolean
-    - shareReports: boolean
-    - updatedAt: OffsetDateTime
-    + update(events: boolean, checkIns: boolean, usage: boolean, reports: boolean): void
+    - category: EventCategory
+    - note: String
+    - urgent: boolean
+    - occurredAt: OffsetDateTime
+    - createdAt: OffsetDateTime
+    + markUrgent(urgent: boolean): void
+    + describe(cat: EventCategory, note: String, urgent: boolean, date: OffsetDateTime): void
   }
 
-  class FollowUpReport <<ValueObject>> {
-    - periodStart: LocalDate
-    - periodEnd: LocalDate
-    - generatedAt: OffsetDateTime
-    - events: List<LifeEvent>
-    - checkIns: List<CheckIn>
-    - usageMetrics: Map<String, Object>
-    - completedTasks: List<Task>
-    + filterByPermissions(link: ResponsibleLink): FollowUpReport
-    + exportPdf(): byte[]
+  class CheckIn {
+    - id: UUID
+    - userId: UUID
+    - day: LocalDate
+    - level: short
+    - recordedAt: OffsetDateTime
+    + record(level: int): void
+  }
+
+  enum ReminderFrequency {
+    ONCE
+    DAILY
+    WEEKLY
+  }
+
+  enum ReminderInsistence {
+    LOW
+    MEDIUM
+    HIGH
+  }
+
+  class Reminder {
+    - id: UUID
+    - userId: UUID
+    - title: String
+    - time: LocalTime
+    - leadMinutes: int
+    - frequency: ReminderFrequency
+    - insistence: ReminderInsistence
+    - enabled: boolean
+    - createdAt: OffsetDateTime
+    - updatedAt: OffsetDateTime
+    + configure(title: String, time: LocalTime, lead: int, freq: ReminderFrequency, ins: ReminderInsistence, en: boolean): void
+    + toggleEnabled(): void
+  }
+
+  enum ContactMethod {
+    LIGACAO
+    MENSAGEM
+    WHATSAPP
+    EMAIL
+  }
+
+  class TrustedContact {
+    - id: UUID
+    - userId: UUID
+    - name: String
+    - method: ContactMethod
+    - value: String
+    - createdAt: OffsetDateTime
+    + update(name: String, method: ContactMethod, val: String): void
   }
 }
 
@@ -191,6 +207,8 @@ package "Planejamento e Gestão de Tarefas" {
     - taskId: UUID
     - title: String
     - minutes: int
+    + getTaskId(): UUID
+    + getMinutes(): int
   }
 
   enum DayFeeling {
@@ -210,10 +228,11 @@ package "Planejamento e Gestão de Tarefas" {
     - createdAt: OffsetDateTime
     - updatedAt: OffsetDateTime
     + applyDecisions(actions: List<TaskActionDTO>): void
+    + getCarriedToTomorrow(): int
   }
 }
 
-package "Foco e Paisagens Sonoras" {
+package "Foco e Bem-Estar Sensorial" {
   enum TimerSound {
     NONE
     WHITE
@@ -264,110 +283,85 @@ package "Foco e Paisagens Sonoras" {
   }
 }
 
-package "Automonitoramento e Apoio" {
-  enum EventCategory {
-    SOCIAL
-    IMPULSIVIDADE
-    URGENCIA
-    SOBRECARGA
+package "Emparelhamento, Consentimento e Relatório" {
+  enum LinkRelationship {
+    FAMILY
+    HEALTH_PROFESSIONAL
+    OTHER
   }
 
-  class LifeEvent {
+  class PairingCode {
     - id: UUID
-    - userId: UUID
-    - category: EventCategory
-    - note: String
-    - urgent: boolean
-    - occurredAt: OffsetDateTime
+    - code: String
+    - primaryUserId: UUID
+    - expiresAt: OffsetDateTime
+    - used: boolean
     - createdAt: OffsetDateTime
-    + markUrgent(urgent: boolean): void
-    + describe(cat: EventCategory, note: String, urgent: boolean, date: OffsetDateTime): void
+    + isExpired(now: OffsetDateTime): boolean
+    + markAsUsed(): void
   }
 
-  class CheckIn {
+  class ResponsibleLink {
     - id: UUID
-    - userId: UUID
-    - day: LocalDate
-    - level: short
-    - recordedAt: OffsetDateTime
-    + record(level: int): void
-  }
-
-  enum ReminderFrequency {
-    ONCE
-    DAILY
-    WEEKLY
-  }
-
-  enum ReminderInsistence {
-    LOW
-    MEDIUM
-    HIGH
-  }
-
-  class Reminder {
-    - id: UUID
-    - userId: UUID
-    - title: String
-    - time: LocalTime
-    - leadMinutes: int
-    - frequency: ReminderFrequency
-    - insistence: ReminderInsistence
-    - enabled: boolean
+    - responsibleId: UUID
+    - primaryUserId: UUID
+    - accessLevel: String
+    - relationship: LinkRelationship
+    - shareEvents: boolean
+    - shareCheckIns: boolean
+    - shareUsage: boolean
+    - shareTasks: boolean
+    - shareReports: boolean
     - createdAt: OffsetDateTime
+    + updatePermissions(permissions: LinkPermissionsDTO): void
+    + isAuthorized(scope: String): boolean
+    + withDefaults(respId: UUID, primId: UUID, defaults: AccessSettings): ResponsibleLink
+  }
+
+  class AccessSettings {
+    - userId: UUID
+    - shareEvents: boolean
+    - shareCheckIns: boolean
+    - shareUsage: boolean
+    - shareReports: boolean
     - updatedAt: OffsetDateTime
-    + configure(title: String, time: LocalTime, lead: int, freq: ReminderFrequency, ins: ReminderInsistence, en: boolean): void
-    + toggleEnabled(): void
+    + update(events: boolean, checkIns: boolean, usage: boolean, reports: boolean): void
   }
 
-  enum ContactMethod {
-    LIGACAO
-    MENSAGEM
-    WHATSAPP
-    EMAIL
-  }
-
-  class TrustedContact {
-    - id: UUID
-    - userId: UUID
-    - name: String
-    - method: ContactMethod
-    - value: String
-    - createdAt: OffsetDateTime
-    + update(name: String, method: ContactMethod, val: String): void
+  class FollowUpReport <<ValueObject>> {
+    - periodStart: LocalDate
+    - periodEnd: LocalDate
+    - generatedAt: OffsetDateTime
+    - events: List<LifeEvent>
+    - checkIns: List<CheckIn>
+    - usageMetrics: Map<String, Object>
+    - completedTasks: List<Task>
+    + filterByPermissions(link: ResponsibleLink): FollowUpReport
+    + exportPdf(): byte[]
   }
 }
 
-' --- Relacionamentos Fortes de Persistência (Foreign Keys do PostgreSQL) ---
-User "1" *-- "0..*" RefreshToken : "FK user_id"
-User "1" *-- "0..*" EmailVerificationToken : "FK user_id"
-User "1" *-- "0..1" AccessSettings : "FK user_id (1:1)"
-User "1" *-- "0..*" PairingCode : "FK primary_user_id"
-User "1" <-- "0..*" ResponsibleLink : "FK primary_user_id"
-User "1" <-- "0..*" ResponsibleLink : "FK responsible_id"
+User "1" *-left- "0..*" RefreshToken : "FK user_id"
+User "1" *-left- "0..*" EmailVerificationToken : "FK user_id"
 
-User "1" *-- "0..*" Task : "FK user_id"
-Task "1" *-- "0..*" TaskStep : "FK task_id (composição)"
+User "1" -up-> "0..*" LifeEvent : "FK user_id"
+User "1" -up-> "0..*" CheckIn : "FK user_id"
+User "1" -up-> "0..*" Reminder : "FK user_id"
+User "1" -up-> "0..*" TrustedContact : "FK user_id"
 
-User "1" *-- "0..*" DayPlan : "FK user_id"
-DayPlan "1" *-- "0..*" PlannedBlock : "elemento ordenado"
-DayPlan "1" *-- "0..*" UnscheduledTask : "elemento ordenado"
-User "1" *-- "0..*" DayReview : "FK user_id"
+User "1" -right-> "0..*" AmbientSession : "FK user_id"
 
-User "1" *-- "0..*" TimerSession : "FK user_id"
-TimerSession "0..*" --> "0..1" Task : "FK task_id (SET NULL)"
-User "1" *-- "0..*" AmbientSession : "FK user_id"
+User "1" -down-> "0..*" Task : "FK user_id"
+Task "1" *-right- "0..*" TaskStep : "FK task_id (composição)"
+DayPlan "1" *-down- "0..*" PlannedBlock : "composição interna"
+DayPlan "1" *-down- "0..*" UnscheduledTask : "composição interna"
+DayPlan "0..*" .right.> "0..*" Task : "aloca tarefas"
+DayReview "0..*" .up.> "0..*" Task : "atualiza tarefas do dia"
+TimerSession "0..*" -up-> "0..1" Task : "FK task_id (opcional)"
 
-User "1" *-- "0..*" LifeEvent : "FK user_id"
-User "1" *-- "0..*" CheckIn : "FK user_id"
-User "1" *-- "0..*" Reminder : "FK user_id"
-User "1" *-- "0..*" TrustedContact : "FK user_id"
-
-' --- Associações Fracas / Dependências Conceituais (Sem FK no Banco) ---
-PlannedBlock ..> Task : "referencia taskId\n(associação fraca: sem FK no banco)"
-UnscheduledTask ..> Task : "referencia taskId\n(associação fraca: sem FK no banco)"
-DayReview ..> Task : "atualiza tarefas do dia\n(em lote transacional)"
-ResponsibleLink ..> FollowUpReport : "autoriza escopos para visualização"
-AccessSettings ..> ResponsibleLink : "fornece permissões padrão iniciais"
+User "1" -down-> "0..*" PairingCode : "gera código"
+PairingCode .right.> ResponsibleLink : "estabelece vínculo"
+AccessSettings "1" .down.> "0..*" ResponsibleLink : "permissões padrão"
+ResponsibleLink "1" .right.> "0..*" FollowUpReport : "autoriza escopos"
 
 @enduml

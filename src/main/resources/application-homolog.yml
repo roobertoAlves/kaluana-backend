@@ -36,7 +36,6 @@ logging:
     br.edu.ifsp.kaluana: INFO
 
 management:
-  # SMTP fora do ar não derruba o health check: o cadastro avisa e dá para reenviar.
   health:
     mail:
       enabled: false
@@ -50,9 +49,6 @@ management:
         enabled: true
 
 app:
-  # Confirmação de e-mail no cadastro. SMTP em spring.mail (abaixo): Mailpit no
-  # desenvolvimento; para Gmail, MAIL_HOST=smtp.gmail.com, MAIL_PORT=587,
-  # MAIL_SMTP_AUTH=true, MAIL_STARTTLS=true e uma senha de app do Google.
   mail:
     require-confirmation: ${EMAIL_CONFIRMATION_REQUIRED:true}
     from: ${MAIL_FROM:Kaluanã <nao-responda@kaluana.local>}
