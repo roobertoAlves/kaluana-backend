@@ -5,14 +5,14 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_DB: kaluana
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-kaluana}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kaluana}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d kaluana"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-kaluana} -d kaluana"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -31,16 +31,16 @@ services:
     build: .
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      DB_URL: ${DB_URL}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
+      DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/kaluana}
+      DB_USER: ${DB_USER:-kaluana}
+      DB_PASSWORD: ${DB_PASSWORD:-kaluana}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-kaluana-segredo-somente-para-desenvolvimento-local}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-30}
       JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-30}
-      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8081}
       PAIRING_CODE_EXPIRATION_MINUTES: ${PAIRING_CODE_EXPIRATION_MINUTES:-15}
       RATE_LIMIT_MAX_ATTEMPTS: ${RATE_LIMIT_MAX_ATTEMPTS:-5}
       RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
@@ -54,15 +54,6 @@ services:
     networks:
       - backend-net
       - app-net
-
-  # frontend:
-  #   build: ../frontend-kaluana-app
-  #   environment:
-  #     VITE_API_BASE_URL: http://localhost:8080
-  #   ports:
-  #     - "5173:80"
-  #   networks:
-  #     - app-net
 
 networks:
   backend-net:

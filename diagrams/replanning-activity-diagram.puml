@@ -1,0 +1,61 @@
+@startuml replanning-activity-diagram
+skinparam monochrome false
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor LightSkyBlue
+  BorderColor Navy
+  ArrowColor Black
+}
+
+start
+
+:Event triggers schedule check\n(task delayed, finished early, deleted, or new task);
+
+if (Is plan currently active for today?) then (yes)
+  :Fetch existing DayPlan and current Tasks;
+  :Identify current time and window end;
+  
+  if (Current block in progress?) then (yes)
+    :Lock ongoing block in place\n(do not interrupt active work);
+  else (no)
+  endif
+
+  :Evaluate shift delta (delay or advance);
+  :Adjust start/end times of remaining blocks\npreserving original sequence;
+  
+  if (Any task was deleted?) then (yes)
+    :Retain block position marked as 'removed'\n(preserve user mental model);
+  else (no)
+  endif
+
+  if (New task added for today?) then (yes)
+    :Append new task to end of day queue;
+  else (no)
+  endif
+
+  if (Remaining blocks exceed window end?) then (yes)
+    :Move overflowing tasks to Unscheduled List\n(without deleting them);
+  else (no)
+  endif
+
+  :Generate clear, human-readable change summary\n(e.g., "30 min delay, 1 task moved to unscheduled");
+  
+  if (Auto-replan enabled?) then (yes)
+    :Save updated DayPlan automatically;
+    :Notify user of adjusted timeline;
+  else (no)
+    :Prompt user: "Replan now or keep current schedule?";
+    if (User confirms?) then (yes)
+      :Save updated DayPlan;
+    else (no)
+      :Keep existing plan unchanged;
+    endif
+  endif
+
+else (no)
+  :No active day plan;
+endif
+
+stop
+
+@enduml

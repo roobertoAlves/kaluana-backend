@@ -1,5 +1,9 @@
 package br.edu.ifsp.kaluana.checkin;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,14 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-/**
- * RF3: check-in diário. O nível é descritivo (1 a 5), sem função
- * diagnóstica (RNF6). O dia vem do aparelho, no fuso local do usuário.
- */
 @Entity
 @Table(name = "check_ins")
 public class CheckIn {
@@ -36,7 +32,6 @@ public class CheckIn {
     private OffsetDateTime recordedAt;
 
     protected CheckIn() {
-        // exigido pelo JPA
     }
 
     public CheckIn(UUID userId, LocalDate day) {

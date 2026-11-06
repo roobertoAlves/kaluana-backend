@@ -1,15 +1,14 @@
 package br.edu.ifsp.kaluana.contact;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Pattern;
-
-/** RF4: contatos de confiança com a forma de contato preferida. */
 @Service
 public class TrustedContactService {
 
@@ -54,7 +53,6 @@ public class TrustedContactService {
         contact.update(request.name().trim(), request.method(), value);
     }
 
-    // Mesma regra do app: telefone com DDD (10+ dígitos) ou e-mail no formato básico.
     private void validateValue(TrustedContactRequestDTO request, String value) {
         if (request.method().isPhone() && value.replaceAll("\\D", "").length() < MIN_PHONE_DIGITS) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o telefone com DDD.");

@@ -1,13 +1,13 @@
 package br.edu.ifsp.kaluana.timer;
 
-import br.edu.ifsp.kaluana.task.TaskService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.UUID;
 
-/** RF9: histórico das sessões de foco (também é indicador de uso, RF8). */
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.edu.ifsp.kaluana.task.TaskService;
+
 @Service
 public class TimerSessionService {
 
@@ -28,7 +28,6 @@ public class TimerSessionService {
 
     @Transactional
     public TimerSessionResponseDTO register(UUID userId, TimerSessionRequestDTO request) {
-        // Só aceita vínculo com tarefa da própria pessoa (404 caso contrário).
         if (request.taskId() != null) {
             taskService.ensureOwned(userId, request.taskId());
         }

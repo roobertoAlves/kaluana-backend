@@ -1,28 +1,23 @@
 package br.edu.ifsp.kaluana.assistant;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.http.HttpClient;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.net.http.HttpClient;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Adaptador para qualquer API compatível com "chat completions" da OpenAI:
- * Ollama local (gratuito, padrão), ou provedores com plano gratuito. Trocar de
- * provedor é só configuração (base-url, model, api-key).
- */
+
 class OpenAiCompatiblePlanningAssistant implements PlanningAssistant {
 
-    // As instruções limitam o modelo a organizar tarefas: nada de saúde,
-    // diagnóstico ou conselho (RNF6, RNF7). A resposta ainda é validada no parser.
     private static final String ORDER_INSTRUCTIONS = """
             Você ajuda uma pessoa a decidir a ordem das tarefas do dia.
             Considere a duração e o nível de energia informado (1 = dia difícil, 5 = dia tranquilo):

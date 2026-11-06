@@ -1,5 +1,3 @@
--- RF9: histórico das sessões de foco. A contagem roda no app; aqui fica
--- só o registro de cada sessão encerrada (sem pontuação, RNF6).
 CREATE TABLE timer_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,

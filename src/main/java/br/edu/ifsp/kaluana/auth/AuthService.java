@@ -1,19 +1,19 @@
 package br.edu.ifsp.kaluana.auth;
 
-import br.edu.ifsp.kaluana.pairing.PairingService;
+import java.util.UUID;
 
-import br.edu.ifsp.kaluana.user.UserResponseDTO;
-import br.edu.ifsp.kaluana.user.User;
-import br.edu.ifsp.kaluana.user.UserRole;
-import br.edu.ifsp.kaluana.user.UserRepository;
-import br.edu.ifsp.kaluana.security.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.UUID;
+import br.edu.ifsp.kaluana.pairing.PairingService;
+import br.edu.ifsp.kaluana.security.JwtService;
+import br.edu.ifsp.kaluana.user.User;
+import br.edu.ifsp.kaluana.user.UserRepository;
+import br.edu.ifsp.kaluana.user.UserResponseDTO;
+import br.edu.ifsp.kaluana.user.UserRole;
 
 @Service
 public class AuthService {
@@ -23,6 +23,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final EmailVerificationService emailVerificationService;
     private volatile String hashFicticio;
 
     public AuthService(
@@ -30,12 +31,14 @@ public class AuthService {
             PairingService pairingService,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            RefreshTokenService refreshTokenService) {
+            RefreshTokenService refreshTokenService,
+            EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.pairingService = pairingService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
@@ -49,15 +52,13 @@ public class AuthService {
                 UserRole.PRIMARY);
 
         userRepository.save(user);
-        return gerarResposta(user);
+        return respostaDoCadastro(user);
     }
 
     @Transactional
     public AuthResponseDTO registerResponsible(RegisterResponsibleRequestDTO request) {
         garantirEmailDisponivel(request.email());
 
-        // Revalida e consome o código dentro desta mesma transação: se algo
-        // falhar depois, tudo desfaz junto (rollback), incluindo o consumo.
         UUID primaryUserId = pairingService.consumeCode(request.code());
 
         User user = new User(
@@ -69,25 +70,25 @@ public class AuthService {
         userRepository.save(user);
         pairingService.createLink(user.getId(), primaryUserId);
 
-        return gerarResposta(user);
+        return respostaDoCadastro(user);
     }
 
-    // Não é readOnly: o login grava o token de renovação.
     @Transactional
     public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByEmailIgnoreCase(request.email().trim()).orElse(null);
 
-        // Sem usuário, compara com um hash qualquer mesmo assim: a resposta leva
-        // o mesmo tempo nos dois casos e não revela quais e-mails têm conta.
         String hash = user != null ? user.getHashPassword() : hashFicticio();
         if (!passwordEncoder.matches(request.password(), hash) || user == null) {
             throw credenciaisInvalidas();
+        }
+        if (!user.isEmailVerified()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Confirme seu e-mail para entrar. Enviamos um link para " + user.getEmail() + ".");
         }
 
         return gerarResposta(user);
     }
 
-    /** RNF4: troca o token de renovação por um par novo (acesso + renovação). */
     @Transactional
     public AuthResponseDTO refresh(RefreshRequestDTO request) {
         RefreshTokenService.Rotated rotated = refreshTokenService.rotate(request.refreshToken());
@@ -115,8 +116,17 @@ public class AuthService {
     }
 
     private ResponseStatusException credenciaisInvalidas() {
-        // Mensagem genérica de propósito: não revela se o e-mail existe ou não.
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos.");
+    }
+
+    
+    private AuthResponseDTO respostaDoCadastro(User user) {
+        if (!emailVerificationService.confirmationRequired()) {
+            user.markEmailVerified();
+            return gerarResposta(user);
+        }
+        emailVerificationService.sendConfirmation(user);
+        return new AuthResponseDTO(null, null, UserResponseDTO.from(user));
     }
 
     private AuthResponseDTO gerarResposta(User user) {

@@ -1,15 +1,14 @@
 package br.edu.ifsp.kaluana.event;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.UUID;
-
-/** RF1: eventos registrados pelo próprio usuário. Toda consulta é filtrada pelo dono. */
 @Service
 public class LifeEventService {
 
@@ -36,7 +35,6 @@ public class LifeEventService {
 
     @Transactional
     public void delete(UUID userId, UUID eventId) {
-        // Busca já filtrada pelo dono: evento de outra pessoa responde 404, sem revelar que existe.
         LifeEvent event = lifeEventRepository.findByIdAndUserId(eventId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado."));
         lifeEventRepository.delete(event);

@@ -44,6 +44,9 @@ public class User {
     @Column(name = "avatar_color", length = 7)
     private String avatarColor;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -71,6 +74,14 @@ public class User {
     @PreUpdate
     void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void markEmailVerified() {
+        this.emailVerified = true;
     }
 
     public UUID getId() {

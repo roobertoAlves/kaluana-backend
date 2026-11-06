@@ -4,10 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Login social ainda não implementado. Responde 501 em vez de deixar a
- * UnsupportedOperationException virar um 500 genérico.
- */
+
 @Service
 public class SocialAuthService {
 

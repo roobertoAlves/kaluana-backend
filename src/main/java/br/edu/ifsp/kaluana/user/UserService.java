@@ -1,13 +1,12 @@
 package br.edu.ifsp.kaluana.user;
 
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.UUID;
-
-/** Dados da própria conta: leitura e personalização do perfil. */
 @Service
 public class UserService {
 

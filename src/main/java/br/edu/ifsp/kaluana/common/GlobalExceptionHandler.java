@@ -1,6 +1,8 @@
 package br.edu.ifsp.kaluana.common;
 
-import jakarta.validation.ConstraintViolationException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,8 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -42,19 +43,16 @@ public class GlobalExceptionHandler {
         return badRequest("Confira os dados informados");
     }
 
-    // Corpo malformado ou valor fora do enum (ex.: categoria inexistente).
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
         return badRequest("Confira os dados informados");
     }
 
-    // Parâmetro de rota/consulta com tipo errado (ex.: UUID ou data inválida).
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return badRequest("Parâmetro inválido: " + ex.getName());
     }
 
-    // Sem este handler, a negação do @PreAuthorize cairia no handler genérico e viraria 500.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)

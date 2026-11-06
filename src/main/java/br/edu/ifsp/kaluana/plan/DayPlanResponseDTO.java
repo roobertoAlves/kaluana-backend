@@ -1,19 +1,15 @@
 package br.edu.ifsp.kaluana.plan;
 
-import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
-import br.edu.ifsp.kaluana.plan.DayReplanner.ChangeKind;
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Plano do dia (RF10). {@code source} diz se a ordem veio das regras ou do
- * assistente de IA; {@code note} explica quando o assistente foi pedido e não
- * pôde ser usado; {@code changes} só vem preenchido no replanejamento (RF14).
- */
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import br.edu.ifsp.kaluana.plan.DayPlanner.BlockKind;
+import br.edu.ifsp.kaluana.plan.DayReplanner.ChangeKind;
+
 public record DayPlanResponseDTO(
         LocalDate date,
         Integer energyLevel,

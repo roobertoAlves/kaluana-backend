@@ -1,0 +1,88 @@
+@startuml use-case-diagram
+left to right direction
+skinparam monochrome false
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype polyline
+skinparam nodesep 50
+skinparam ranksep 60
+
+actor "Usuário Principal\n(Pessoa com TDAH)" as User
+actor "Responsável / Profissional\n(Familiar ou Especialista)" as Responsible
+actor "Assistente de IA\n(Serviço Opcional)" as AIAssistant
+
+rectangle "Sistema Kaluanã" {
+
+  package "Identidade e Conta" {
+    usecase "UC12: Personalizar Perfil" as UC_Profile
+    usecase "UC_Mail: Confirmar E-mail no Cadastro" as UC_EmailConfirm
+  }
+
+  package "Planejamento e Rotina Diária" {
+    usecase "UC10: Planejar o Dia Determinístico" as UC_PlanDay
+    usecase "UC14: Replanejar o Dia Automaticamente" as UC_ReplanDay
+    usecase "UC11: Solicitar Sugestões de Planejamento da IA" as UC_AIAssistant
+    usecase "UC17: Revisar o Fim do Dia" as UC_DayReview
+  }
+
+  package "Gestão de Tarefas" {
+    usecase "UC05: Gerenciar Tarefas e Microetapas" as UC_Tasks
+    usecase "UC15: Criar Tarefa por Frase Natural" as UC_QuickAdd
+  }
+
+  package "Foco e Apoio Sensorial" {
+    usecase "UC09: Conduzir Sessão de Foco" as UC_FocusSession
+    usecase "UC16: Relaxar ou Dormir com Paisagens Sonoras" as UC_Soundscapes
+  }
+
+  package "Automonitoramento e Apoio" {
+    usecase "UC01: Registrar Evento de Vida" as UC_LogEvent
+    usecase "UC03: Preencher Check-In Diário" as UC_CheckIn
+    usecase "UC02: Configurar Lembrete Insistente" as UC_Reminders
+    usecase "UC04: Cadastrar Contatos de Confiança" as UC_Contacts
+  }
+
+  package "Emparelhamento" {
+    usecase "UC06a: Gerar Código de Emparelhamento" as UC_GenCode
+    usecase "UC06b: Vincular Conta via Código" as UC_ConnectCode
+  }
+
+  package "Consentimento" {
+    usecase "UC08: Configurar Permissões de Acesso por Pessoa" as UC_Permissions
+    usecase "UC_Auth: Validar Permissões Autorizadas" as UC_VerifyAuth
+  }
+
+  package "Relatório" {
+    usecase "UC07: Exportar Relatório Não Diagnóstico em PDF" as UC_ExportReport
+  }
+}
+
+User --> UC_Profile
+User --> UC_EmailConfirm
+User --> UC_PlanDay
+User --> UC_DayReview
+User --> UC_Tasks
+User --> UC_FocusSession
+User --> UC_Soundscapes
+User --> UC_LogEvent
+User --> UC_CheckIn
+User --> UC_Reminders
+User --> UC_Contacts
+User --> UC_GenCode
+User --> UC_Permissions
+
+Responsible --> UC_ConnectCode
+Responsible --> UC_ExportReport
+
+AIAssistant --> UC_AIAssistant
+
+UC_ReplanDay .> UC_PlanDay : <<extend>>\n(ao detectar desvios na rotina)
+UC_AIAssistant .> UC_PlanDay : <<extend>>\n(sugestão opcional da IA)
+UC_QuickAdd .> UC_Tasks : <<extend>>\n(parser de texto natural)
+
+UC_ExportReport .> UC_VerifyAuth : <<include>>
+UC_ConnectCode .> UC_VerifyAuth : <<include>>
+
+UC_FocusSession ..> UC_Tasks : <<link>>\n(vínculo opcional com tarefa)
+
+@enduml

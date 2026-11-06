@@ -1,23 +1,21 @@
 package br.edu.ifsp.kaluana.assistant;
 
-import br.edu.ifsp.kaluana.assistant.PlanningAssistant.TaskSummary;
-import br.edu.ifsp.kaluana.security.RedisRateLimiter;
-import br.edu.ifsp.kaluana.task.TaskService;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import br.edu.ifsp.kaluana.assistant.PlanningAssistant.TaskSummary;
+import br.edu.ifsp.kaluana.security.RedisRateLimiter;
+import br.edu.ifsp.kaluana.task.TaskService;
 
-/**
- * Regras de uso do assistente (RF11, RNF7): limite por usuário, envio mínimo de
- * dados e plano B silencioso. Nunca registra em log o conteúdo das tarefas.
- */
+
 @Service
 public class AssistantService {
 
@@ -41,7 +39,6 @@ public class AssistantService {
         return new AssistantStatusDTO(assistant.isEnabled(), assistant.modelName());
     }
 
-    /** Ordem sugerida, ou vazio se o assistente estiver desligado ou falhar (quem chama usa as regras). */
     public Optional<List<Integer>> suggestOrder(UUID userId, List<TaskSummary> tasks, Integer energyLevel) {
         if (!assistant.isEnabled() || tasks.isEmpty()) {
             return Optional.empty();

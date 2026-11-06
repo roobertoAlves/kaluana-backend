@@ -53,8 +53,6 @@ services:
     networks:
       - kaluana-net
     restart: unless-stopped
-    # Sem "ports": o backend só é alcançável pela rede interna do compose.
-    # Quem fala com a internet é o Caddy.
 
   caddy:
     image: caddy:2.8-alpine
