@@ -211,15 +211,13 @@ Reminder -[hidden]down- CheckIn
 CheckIn -[hidden]down- TrustedContact
 TrustedContact -[hidden]down- GuideSession
 
+User "1 (principal)" -down- "0..*" AccessLog
+User "1 (quem viu)" -down- "0..*" AccessLog
 User "1 (principal)" -down- "0..*" ResponsibleLink
 User "1 (responsável)" -down- "0..*" ResponsibleLink
 User "1" -down- "0..*" PairingCode
 User "1" -down- "0..1" AccessSettings
-PairingCode -[hidden]right- ResponsibleLink
 ResponsibleLink ..> AccessSettings : usa o padrão
-User "1 (principal)" -down- "0..*" AccessLog
-User "1 (quem viu)" -down- "0..*" AccessLog
-AccessSettings -[hidden]right- AccessLog
 
 User "1" -right- "0..*" Task
 Task "1" *-down- "0..*" TaskStep

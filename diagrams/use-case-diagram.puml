@@ -40,6 +40,7 @@ rectangle "Kaluanã" {
     usecase "Definir o que cada\npessoa pode ver (RF8)" as UC8
     usecase "Vincular conta\npelo código (RF6)" as UC6b
     usecase "Exportar relatório\nem PDF (RF7)" as UC7
+    usecase "Ver quem acessou\nmeus dados (RF8)" as UC19
   }
 }
 
