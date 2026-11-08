@@ -1,61 +1,35 @@
 @startuml replanning-activity-diagram
-skinparam monochrome false
 skinparam shadowing false
-skinparam activity {
-  BackgroundColor LightSkyBlue
-  BorderColor Navy
-  ArrowColor Black
-}
+skinparam defaultFontSize 13
+title Replanejamento do dia (RF14)
 
 start
-
-:Event triggers schedule check\n(task delayed, finished early, deleted, or new task);
-
-if (Is plan currently active for today?) then (yes)
-  :Fetch existing DayPlan and current Tasks;
-  :Identify current time and window end;
-  
-  if (Current block in progress?) then (yes)
-    :Lock ongoing block in place\n(do not interrupt active work);
-  else (no)
-  endif
-
-  :Evaluate shift delta (delay or advance);
-  :Adjust start/end times of remaining blocks\npreserving original sequence;
-  
-  if (Any task was deleted?) then (yes)
-    :Retain block position marked as 'removed'\n(preserve user mental model);
-  else (no)
-  endif
-
-  if (New task added for today?) then (yes)
-    :Append new task to end of day queue;
-  else (no)
-  endif
-
-  if (Remaining blocks exceed window end?) then (yes)
-    :Move overflowing tasks to Unscheduled List\n(without deleting them);
-  else (no)
-  endif
-
-  :Generate clear, human-readable change summary\n(e.g., "30 min delay, 1 task moved to unscheduled");
-  
-  if (Auto-replan enabled?) then (yes)
-    :Save updated DayPlan automatically;
-    :Notify user of adjusted timeline;
-  else (no)
-    :Prompt user: "Replan now or keep current schedule?";
-    if (User confirms?) then (yes)
-      :Save updated DayPlan;
-    else (no)
-      :Keep existing plan unchanged;
-    endif
-  endif
-
-else (no)
-  :No active day plan;
+:Aplicativo abre o plano, volta ao primeiro plano\nou completa mais um minuto com a tela aberta;
+if (Existe plano salvo para hoje?) then (não)
+  stop
+else (sim)
 endif
-
+:Compara o plano salvo com as tarefas atuais\ne o horário informado pelo aparelho;
+if (O plano ainda corresponde ao dia?) then (sim)
+  stop
+else (não)
+endif
+if (Reorganização automática ligada?) then (sim)
+else (não)
+  :Avisa que o plano ficou desatualizado\ne pergunta se deve reorganizar;
+  if (Pessoa aceita?) then (não)
+    :Mantém o plano como está;
+    stop
+  else (sim)
+  endif
+endif
+:Mantém fixo o bloco em andamento;
+:Reposiciona os blocos seguintes a partir de agora,\nna ordem já aceita pela pessoa;
+:Marca como removidas as tarefas apagadas\ne inclui as tarefas novas do dia no fim;
+if (Algum bloco passa do fim da janela?) then (sim)
+  :Move o que não cabe para "não couberam",\nsem apagar nenhuma tarefa;
+else (não)
+endif
+:Salva o plano e mostra a lista de mudanças\n(o que mudou de horário, entrou ou saiu);
 stop
-
 @enduml

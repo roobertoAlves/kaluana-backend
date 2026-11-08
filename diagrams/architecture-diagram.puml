@@ -1,83 +1,52 @@
 @startuml architecture-diagram
-skinparam monochrome false
 skinparam shadowing false
-skinparam componentStyle uml2
+skinparam defaultFontSize 13
+skinparam componentStyle rectangle
+left to right direction
+title Arquitetura do sistema
 
-package "Client Layer (Mobile App)" {
-  [Expo / React Native UI] as UI
-  [Axios HTTP Client] as HttpClient
-  [Local Sound Engine] as SoundEngine
-  [AsyncStorage Cache] as LocalStorage
-
-  UI --> HttpClient
-  UI --> SoundEngine
-  UI --> LocalStorage
+package "Aplicativo (React Native + Expo)" {
+  [Telas e navegação] as Telas
+  [Hooks de dados\n(cache em AsyncStorage)] as Hooks
+  [Cliente HTTP único (axios)\nendereço da API automático] as Http
+  [Notificações locais\n(expo-notifications)] as Notif
+  [Sons e sessão de foco\n(expo-audio)] as Som
+  [PDF do relatório\n(expo-print)] as Pdf
 }
 
-package "API Gateway & Security Layer" {
-  [Rate Limit Filter (Redis)] as RateLimiter
-  [JWT Authentication Filter] as JwtFilter
-  [CORS Configuration] as CorsConfig
+node "Produção" {
+  [Caddy\n(HTTPS automático)] as Caddy
 }
 
-package "Backend Core (Spring Boot)" {
-  package "REST Controllers" {
-    [Auth & Pairing Controller] as AuthCtrl
-    [Planning & Tasks Controller] as PlanCtrl
-    [Monitoring & Timer Controller] as MonCtrl
-    [Report Controller] as ReportCtrl
-  }
-
-  package "Domain Services" {
-    [Auth & Token Service] as AuthService
-    [DayPlanner & Replanner] as PlanService
-    [Task & Timer Service] as TaskService
-    [Report & Privacy Service] as ReportService
-    [Assistant Integration] as AssistantService
-  }
-
-  package "Data Repositories (Spring Data JPA)" {
-    [JPA Repositories] as Repositories
-  }
+package "API (Spring Boot)" {
+  [Filtro de limite\nde requisições] as Limite
+  [Filtro de\nautenticação JWT] as Jwt
+  [Controladores REST] as Ctrl
+  [Serviços\n(regras de negócio)] as Serv
+  [Repositórios JPA\n(filtrados pelo dono)] as Repo
+  [Adaptador do\nassistente de IA] as Adapt
 }
 
-database "Persistence Layer" {
-  database "PostgreSQL 16" as Postgres {
-    [Relational Tables\n(Flyway V1..V16)] as Schema
-  }
-  database "Redis 7" as Redis {
-    [Rate Limits &\nSession Blacklist] as RedisData
-  }
-}
+database "PostgreSQL\n(Flyway V1 a V16)" as Pg
+database "Redis\n(contadores de limite)" as Redis
+cloud "Serviço de IA opcional\n(Ollama ou compatível)" as IA
+cloud "Servidor SMTP\n(Mailpit ou Gmail)" as Smtp
 
-cloud "External Services" {
-  [Ollama / OpenAI API\n(Optional AI Assistant)] as ExtAI
-  [Mailpit / SMTP Service\n(Email Confirmation)] as MailService
-}
-
-HttpClient --> CorsConfig : HTTPS / REST
-CorsConfig --> RateLimiter
-RateLimiter --> JwtFilter
-JwtFilter --> AuthCtrl
-JwtFilter --> PlanCtrl
-JwtFilter --> MonCtrl
-JwtFilter --> ReportCtrl
-
-AuthCtrl --> AuthService
-PlanCtrl --> PlanService
-PlanCtrl --> TaskService
-MonCtrl --> TaskService
-ReportCtrl --> ReportService
-PlanService --> AssistantService
-
-AuthService --> Repositories
-AuthService --> RedisData
-RateLimiter --> RedisData
-AuthService --> MailService
-PlanService --> Repositories
-TaskService --> Repositories
-ReportService --> Repositories
-AssistantService ..> ExtAI : Optional REST/HTTP
-Repositories --> Schema
+Telas --> Hooks
+Hooks --> Http
+Telas --> Notif
+Telas --> Som
+Telas --> Pdf
+Http --> Caddy : HTTPS
+Caddy --> Limite
+Limite --> Jwt
+Jwt --> Ctrl
+Ctrl --> Serv
+Serv --> Repo
+Serv --> Adapt
+Serv --> Smtp : e-mail de confirmação
+Repo --> Pg
+Limite --> Redis
+Adapt ..> IA : somente se ligado
 
 @enduml
