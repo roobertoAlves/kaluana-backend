@@ -4364,6 +4364,336 @@
 			]
 		},
 		{
+			"name": "Guide (RF13)",
+			"item": [
+				{
+					"name": "Record Guide Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guideId\": \"sobrecarga\",\n    \"guideVersion\": 1,\n    \"status\": \"COMPLETED\",\n    \"stepsCount\": 4,\n    \"startedAt\": \"2026-11-08T10:00:00-03:00\",\n    \"finishedAt\": \"2026-11-08T10:04:00-03:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.test('guarda só o resumo', () => { const r = pm.response.json(); pm.expect(r.status).to.eql('COMPLETED'); pm.expect(r.stepsCount).to.eql(4); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Record Guide Session (fim antes do início → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guideId\": \"sobrecarga\",\n    \"guideVersion\": 1,\n    \"status\": \"ABANDONED\",\n    \"stepsCount\": 4,\n    \"startedAt\": \"2026-11-08T10:00:00-03:00\",\n    \"finishedAt\": \"2026-11-08T09:00:00-03:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Record Guide Session (responsável → 403)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guideId\": \"sobrecarga\",\n    \"guideVersion\": 1,\n    \"status\": \"COMPLETED\",\n    \"stepsCount\": 4,\n    \"startedAt\": \"2026-11-08T10:00:00-03:00\",\n    \"finishedAt\": \"2026-11-08T10:04:00-03:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Guide Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('uma sessão', () => pm.expect(pm.response.json()).to.have.length(1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Rank Guide Options (assistente desligado: ordem padrão)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/guide/rank",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"guide",
+								"rank"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"O que ajuda agora?\",\n    \"options\": [\n        \"Fazer uma pausa\",\n        \"Respirar com o Relaxar\",\n        \"Falar com alguém\"\n    ],\n    \"energyLevel\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('ordem padrão', () => pm.expect(pm.response.json().order).to.eql([0, 1, 2]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Rank Guide Options (uma opção → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/guide/rank",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"guide",
+								"rank"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"O que ajuda agora?\",\n    \"options\": [\n        \"Só uma\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Parse Task Phrase (assistente desligado → 503)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/tasks/parse",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"tasks",
+								"parse"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phrase\": \"preciso ver o boleto da luz antes de sexta\",\n    \"today\": \"2026-11-08\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 503', () => pm.response.to.have.status(503));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Unlink",
 			"item": [
 				{
