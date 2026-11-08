@@ -1,3 +1,4 @@
+-- RF10 / RF14: plano do dia salvo, para poder ser replanejado quando o dia muda.
 CREATE TABLE day_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -13,6 +14,8 @@ CREATE TABLE day_plans (
     CONSTRAINT ck_day_plans_energy CHECK (energy_level IS NULL OR energy_level BETWEEN 1 AND 5)
 );
 
+-- Fotografia do plano aceito: sem FK para tasks, porque uma tarefa apagada
+-- precisa continuar aparecendo como "removida" no próximo replanejamento.
 CREATE TABLE day_plan_blocks (
     plan_id UUID NOT NULL REFERENCES day_plans (id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
