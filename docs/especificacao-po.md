@@ -133,8 +133,10 @@ aceite e rastreabilidade no código.
   - Dado um vínculo sem "Relatórios e PDF", então a API responde 403.
   - Dado um vínculo com apenas check-ins e tarefas liberados, então o relatório
     não contém eventos nem indicadores de uso.
-- **Rastreabilidade:** `report/*`; `ReportScreen`, `features/reports/reportHtml`,
-  `services/reportPdf`.
+  - Dado um relatório visto ou exportado por um vínculo, então fica registrado
+    quem acessou, quando, a ação e o período.
+- **Rastreabilidade:** `report/*`, `access/AccessLog*`; V17; `ReportScreen`,
+  `features/reports/reportHtml`, `services/reportPdf`.
 
 ### RF8 - Definir o que cada pessoa pode ver
 
@@ -149,8 +151,11 @@ aceite e rastreabilidade no código.
     403.
   - Dada uma alteração de permissão, então ela vale no próximo relatório daquela
     pessoa e não muda as das demais.
-- **Rastreabilidade:** `pairing/ResponsibleLink`, `access/*`; V10 e V13;
-  `LinkPermissionsCard`.
+  - Dado o usuário principal, quando abre "Quem viu meus dados", então vê os
+    últimos 100 acessos, agrupados por dia, com a pessoa e a ação; um
+    responsável recebe 403.
+- **Rastreabilidade:** `pairing/ResponsibleLink`, `access/*`; V10, V13 e V17;
+  `LinkPermissionsCard`, `AccessLogScreen`, `features/access/accessLog`.
 
 ### RF9 - Conduzir sessão de foco
 
@@ -186,6 +191,8 @@ aceite e rastreabilidade no código.
 - **Critérios de aceite:**
   - Dado o assistente desligado, então `GET /api/assistant/status` informa
     desligado e o plano usa as regras.
+  - Dado o assistente desligado ou com falha, quando o guia pede a ordem das
+    opções, então a resposta é a ordem padrão.
 - **Rastreabilidade:** `assistant/*`.
 
 ### RF12 - Personalizar perfil
@@ -195,7 +202,7 @@ aceite e rastreabilidade no código.
 - **Critérios de aceite:** dada uma cor inválida, então a API responde 400.
 - **Rastreabilidade:** `user/*`; V9; `EditProfileScreen`.
 
-### RF13 - Seguir o guia de autorregulação (planejado para a R6)
+### RF13 - Seguir o guia de autorregulação
 
 - **História:** como usuário, em um momento difícil, quero ser guiado por poucos
   passos simples, escolhendo entre opções fixas.
@@ -207,6 +214,14 @@ aceite e rastreabilidade no código.
   - Dada a mesma sequência de escolhas, então o guia sempre chega à mesma etapa
     (testável sem interface).
   - Dado o prazo de uma etapa vencido, então o guia segue pela opção padrão.
+  - Dada a sessão pausada, então o prazo da etapa não corre até ela continuar.
+  - Dada uma ordem sugerida pelo assistente que não seja uma permutação das
+    opções, então ela é descartada e vale a ordem do guia.
+  - Dada uma sessão com fim antes do início, então a API responde 400.
+- **Rastreabilidade:** `guide/*`, `assistant/AssistantController`
+  (`/api/assistant/guide/rank`); V18; `GuideScreen`, `features/guide/*`.
+- **Pendência:** o primeiro guia ("Quando tudo parece demais") é um rascunho a
+  revisar com a orientação.
 
 ### RF14 - Replanejar o dia
 
@@ -223,10 +238,17 @@ aceite e rastreabilidade no código.
 - **Regras:** reconhece data ("amanhã", dia da semana), duração ("30min"),
   prioridade ("!alta") e microetapas separadas por ponto e vírgula; mostra o que
   entendeu antes de salvar; cada interpretação pode ser desfeita.
-- **Critérios de aceite:** dada a frase "estudar cálculo amanhã 30min !alta",
-  então a tarefa "Estudar cálculo" é criada para amanhã, com 30 minutos e
-  prioridade alta.
-- **Rastreabilidade:** `features/tasks/quickAdd`, `QuickChips`.
+- **Critérios de aceite:**
+  - Dada a frase "estudar cálculo amanhã 30min !alta", então a tarefa "Estudar
+    cálculo" é criada para amanhã, com 30 minutos e prioridade alta.
+  - Dado o assistente ligado e uma frase em que as regras não reconhecem nada,
+    então aparece "Interpretar com o assistente"; a resposta só aceita data de
+    hoje até um ano, 5 a 480 minutos, prioridade válida e até 12 etapas, e é
+    mostrada em chips antes de salvar.
+  - Dado o assistente desligado, então `/api/assistant/tasks/parse` responde 503
+    e a tarefa pode ser salva como está.
+- **Rastreabilidade:** `features/tasks/quickAdd`, `features/tasks/assistantParse`,
+  `QuickChips`, `assistant/AssistantResponseParser`.
 
 ### RF16 - Relaxar ou dormir com sons
 
@@ -289,8 +311,9 @@ Uma história está pronta quando:
 | Prioridade | Item | Critério de aceite principal |
 | --- | --- | --- |
 | 1 | Teste de ponta a ponta em aparelho Android | Todos os fluxos de RF1 a RF18 executados em aparelho, sem erro. |
-| 2 | Auditoria de acesso (R5) | Cada relatório visto ou exportado por um vínculo fica registrado, e o usuário vê "quem viu meus dados" com data e pessoa. |
-| 3 | Guia de autorregulação (RF13, R6) | Máquina de estados testada sem interface, telas do guia e registro do resumo da sessão. |
-| 4 | IA no guia | O assistente pode apenas reordenar as opções fixas de uma etapa; resposta fora das opções é descartada. |
-| 5 | IA na frase da tarefa (RF15) | Quando as regras não reconhecem a frase, o assistente devolve campos validados, mostrados antes de salvar. |
-| 6 | Verificação em iOS | Depende de um computador com macOS. |
+| 2 | Revisão do conteúdo do guia (RF13) | O texto e as opções do guia "Quando tudo parece demais" aprovados pela equipe e pela orientação. |
+| 3 | Mais guias de autorregulação | Cada guia novo passa em `validateGuide` (2 ou 3 opções, destinos existentes, sempre chega a um fim). |
+| 4 | Verificação em iOS | Depende de um computador com macOS. |
+
+Itens já entregues: auditoria de acesso (R5), guia de autorregulação (RF13, R6),
+IA no guia (só reordena as opções) e IA na frase da tarefa (RF15).
