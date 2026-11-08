@@ -1,3 +1,5 @@
+-- RF17: revisão do fim do dia. Guarda só as contagens das decisões e, se a
+-- pessoa quiser, como foi o dia em três opções fixas (sem pontuação, RNF6).
 CREATE TABLE day_reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,

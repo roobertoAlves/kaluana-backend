@@ -1,3 +1,5 @@
+-- RNF4: renovação de sessão. O token de acesso (JWT) dura pouco; o de
+-- renovação dura mais, é guardado só como hash e troca a cada uso (rotação).
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
