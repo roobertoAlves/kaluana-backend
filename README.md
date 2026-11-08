@@ -149,6 +149,11 @@ npx newman run postman/kaluana_collection.json -e postman/env_dev.json
 A coleção cria os próprios usuários e dados, então deve ser executada com o
 banco recém-criado (`docker compose down -v` e depois `up` de novo).
 
+Só com o `docker-compose.yml`, o login não exige e-mail confirmado, porque
+não há servidor de e-mail. Para testar a confirmação, suba também o Mailpit
+(`docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d`, caixa
+de entrada em http://localhost:8025) e rode `postman/kaluana_email_confirmation.json`.
+
 ## 6. Estrutura do código
 
 O código fica em `src/main/java/br/edu/ifsp/kaluana`, organizado por

@@ -1,6 +1,7 @@
 package br.edu.ifsp.kaluana.assistant;
 
 import java.net.http.HttpClient;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -29,6 +30,20 @@ class OpenAiCompatiblePlanningAssistant implements PlanningAssistant {
             Você divide uma tarefa em microetapas concretas e curtas (até 8), cada uma começando por um verbo.
             Não dê conselhos de saúde, diagnósticos nem comentários.
             Responda somente com JSON no formato {"etapas": ["...", "..."]}.""";
+
+    private static final String RANK_INSTRUCTIONS = """
+            Você ajuda a ordenar as opções fixas de uma etapa de um guia de organização pessoal.
+            Considere o horário e o nível de energia informado (1 = dia difícil, 5 = dia tranquilo).
+            Não crie opções novas, não reescreva as opções, não dê conselhos de saúde nem diagnósticos.
+            Responda somente com JSON no formato {"ordem": [índices]} usando os índices recebidos.""";
+
+    private static final String PARSE_INSTRUCTIONS = """
+            Você transforma uma frase em português em uma tarefa.
+            Extraia o título (curto, começando por verbo), a data (AAAA-MM-DD, só se a frase indicar),
+            a duração em minutos (só se indicada), a prioridade (LOW, MEDIUM ou HIGH, só se indicada)
+            e microetapas (só se a frase listar passos). Não invente informações.
+            Responda somente com JSON no formato
+            {"titulo": "...", "data": null, "minutos": null, "prioridade": null, "etapas": []}.""";
 
     private static final int MAX_TOKENS = 600;
 
@@ -76,6 +91,22 @@ class OpenAiCompatiblePlanningAssistant implements PlanningAssistant {
     @Override
     public List<String> suggestSteps(String taskTitle) {
         return AssistantResponseParser.parseSteps(complete(STEPS_INSTRUCTIONS, "Tarefa: " + taskTitle));
+    }
+
+    @Override
+    public List<Integer> rankOptions(String question, List<String> options, Integer energyLevel) {
+        String optionList = IntStream.range(0, options.size())
+                .mapToObj(i -> i + ": " + options.get(i))
+                .collect(Collectors.joining("\n"));
+        String energy = energyLevel != null ? energyLevel.toString() : "não informado";
+        String content = complete(RANK_INSTRUCTIONS, "Energia: " + energy + "\nEtapa: " + question + "\nOpções:\n" + optionList);
+        return AssistantResponseParser.parseRanking(content, options.size());
+    }
+
+    @Override
+    public ParsedTaskDTO parseTask(String phrase, LocalDate today) {
+        String content = complete(PARSE_INSTRUCTIONS, "Hoje: " + today + "\nFrase: " + phrase);
+        return AssistantResponseParser.parseTask(content, today);
     }
 
     private String complete(String instructions, String input) {

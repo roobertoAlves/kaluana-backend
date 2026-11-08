@@ -3535,6 +3535,101 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "Update Access Settings (padrão para novos vínculos)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-settings"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"events\": true,\n    \"checkins\": true,\n    \"usage\": false,\n    \"reports\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('padrão salvo', () => { const r = pm.response.json(); pm.expect(r.events).to.eql(true); pm.expect(r.usage).to.eql(false); pm.expect(r.reports).to.eql(true); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Access Settings (responsável → 403)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-settings"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"events\": true,\n    \"checkins\": true,\n    \"usage\": true,\n    \"reports\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
 				}
 			]
 		},
@@ -3913,6 +4008,120 @@
 					]
 				},
 				{
+					"name": "Record PDF Export",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/reports/linked/{{primaryId}}/export?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"reports",
+								"linked",
+								"{{primaryId}}",
+								"export"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Access Logs (quem viu meus dados)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-logs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-logs"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"const logs = pm.response.json();",
+									"pm.test('registra a visualização e a exportação', () => { const acoes = logs.map((l) => l.action); pm.expect(acoes).to.include('VIEW_REPORT'); pm.expect(acoes).to.include('EXPORT_PDF'); });",
+									"pm.test('identifica quem viu', () => pm.expect(logs[0].viewerName).to.eql('User Responsible'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Access Logs (responsável → 403)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/access-logs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"access-logs"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				},
+				{
 					"name": "Linked Report (principal → 403)",
 					"request": {
 						"method": "GET",
@@ -3949,6 +4158,534 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Tasks: apagar (RF5)",
+			"item": [
+				{
+					"name": "Create Task para apagar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Tarefa para apagar\",\n    \"priority\": \"LOW\",\n    \"steps\": [\n        \"Primeiro passo\",\n        \"Segundo passo\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"const r = pm.response.json();",
+									"pm.collectionVariables.set('deleteTaskId', r.id);",
+									"pm.collectionVariables.set('deleteStepId', r.steps[0].id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Step",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{deleteTaskId}}/steps/{{deleteStepId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{deleteTaskId}}",
+								"steps",
+								"{{deleteStepId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('sobra uma microetapa', () => { const r = pm.response.json(); pm.expect(r.steps).to.have.length(1); pm.expect(r.steps[0].text).to.eql('Segundo passo'); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Task (outra pessoa → 404)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{deleteTaskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{deleteTaskId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Task",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{deleteTaskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{deleteTaskId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 204', () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Task (já apagada → 404)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{deleteTaskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								"{{deleteTaskId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 404', () => pm.response.to.have.status(404));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Guide (RF13)",
+			"item": [
+				{
+					"name": "Record Guide Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guideId\": \"sobrecarga\",\n    \"guideVersion\": 1,\n    \"status\": \"COMPLETED\",\n    \"stepsCount\": 4,\n    \"startedAt\": \"2026-11-08T10:00:00-03:00\",\n    \"finishedAt\": \"2026-11-08T10:04:00-03:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 201', () => pm.response.to.have.status(201));",
+									"pm.test('guarda só o resumo', () => { const r = pm.response.json(); pm.expect(r.status).to.eql('COMPLETED'); pm.expect(r.stepsCount).to.eql(4); });"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Record Guide Session (fim antes do início → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guideId\": \"sobrecarga\",\n    \"guideVersion\": 1,\n    \"status\": \"ABANDONED\",\n    \"stepsCount\": 4,\n    \"startedAt\": \"2026-11-08T10:00:00-03:00\",\n    \"finishedAt\": \"2026-11-08T09:00:00-03:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Record Guide Session (responsável → 403)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{responsibleToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guideId\": \"sobrecarga\",\n    \"guideVersion\": 1,\n    \"status\": \"COMPLETED\",\n    \"stepsCount\": 4,\n    \"startedAt\": \"2026-11-08T10:00:00-03:00\",\n    \"finishedAt\": \"2026-11-08T10:04:00-03:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 403', () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Guide Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/guide-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"guide-sessions"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('uma sessão', () => pm.expect(pm.response.json()).to.have.length(1));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Rank Guide Options (assistente desligado: ordem padrão)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/guide/rank",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"guide",
+								"rank"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"O que ajuda agora?\",\n    \"options\": [\n        \"Fazer uma pausa\",\n        \"Respirar com o Relaxar\",\n        \"Falar com alguém\"\n    ],\n    \"energyLevel\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 200', () => pm.response.to.have.status(200));",
+									"pm.test('ordem padrão', () => pm.expect(pm.response.json().order).to.eql([0, 1, 2]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Rank Guide Options (uma opção → 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/guide/rank",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"guide",
+								"rank"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"O que ajuda agora?\",\n    \"options\": [\n        \"Só uma\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 400', () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Parse Task Phrase (assistente desligado → 503)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{primaryToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/assistant/tasks/parse",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"assistant",
+								"tasks",
+								"parse"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phrase\": \"preciso ver o boleto da luz antes de sexta\",\n    \"today\": \"2026-11-08\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('status 503', () => pm.response.to.have.status(503));"
 								]
 							}
 						}

@@ -1,5 +1,7 @@
 package br.edu.ifsp.kaluana.report;
 
+import br.edu.ifsp.kaluana.access.AccessAction;
+import br.edu.ifsp.kaluana.access.AccessLogService;
 import br.edu.ifsp.kaluana.ambient.AmbientMode;
 import br.edu.ifsp.kaluana.ambient.AmbientSessionRepository;
 import br.edu.ifsp.kaluana.pairing.PairingService;
@@ -48,6 +50,7 @@ public class ReportService {
     private final TaskRepository taskRepository;
     private final AmbientSessionRepository ambientSessionRepository;
     private final PairingService pairingService;
+    private final AccessLogService accessLogService;
 
     public ReportService(
             UserRepository userRepository,
@@ -56,7 +59,8 @@ public class ReportService {
             TimerSessionRepository timerSessionRepository,
             TaskRepository taskRepository,
             AmbientSessionRepository ambientSessionRepository,
-            PairingService pairingService) {
+            PairingService pairingService,
+            AccessLogService accessLogService) {
         this.userRepository = userRepository;
         this.lifeEventRepository = lifeEventRepository;
         this.checkInRepository = checkInRepository;
@@ -64,6 +68,7 @@ public class ReportService {
         this.taskRepository = taskRepository;
         this.ambientSessionRepository = ambientSessionRepository;
         this.pairingService = pairingService;
+        this.accessLogService = accessLogService;
     }
 
     @Transactional(readOnly = true)
@@ -72,17 +77,30 @@ public class ReportService {
         return build(findUser(userId), days, Scope.EVERYTHING, null, null);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ReportResponseDTO linkedReport(UUID responsibleId, UUID primaryUserId, int days) {
         validatePeriod(days);
+        ResponsibleLink link = authorizedLink(responsibleId, primaryUserId);
+        User viewer = findUser(responsibleId);
+        ReportResponseDTO report = build(findUser(primaryUserId), days, Scope.from(link), viewer.getName(), link);
+        accessLogService.record(primaryUserId, responsibleId, AccessAction.VIEW_REPORT, days);
+        return report;
+    }
+
+    @Transactional
+    public void recordExport(UUID responsibleId, UUID primaryUserId, int days) {
+        validatePeriod(days);
+        authorizedLink(responsibleId, primaryUserId);
+        accessLogService.record(primaryUserId, responsibleId, AccessAction.EXPORT_PDF, days);
+    }
+
+    private ResponsibleLink authorizedLink(UUID responsibleId, UUID primaryUserId) {
         ResponsibleLink link = pairingService.findLink(responsibleId, primaryUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo não encontrado."));
         if (!link.isShareReports()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A pessoa ainda não liberou relatórios para você.");
         }
-
-        User viewer = findUser(responsibleId);
-        return build(findUser(primaryUserId), days, Scope.from(link), viewer.getName(), link);
+        return link;
     }
 
     private ReportResponseDTO build(User user, int days, Scope scope, String preparedFor, ResponsibleLink link) {

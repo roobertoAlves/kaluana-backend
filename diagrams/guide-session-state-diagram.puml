@@ -1,0 +1,24 @@
+@startuml guide-session-state-diagram
+skinparam shadowing false
+skinparam defaultFontSize 13
+title Estados da sessão do guia de autorregulação (RF13)
+
+[*] --> EmAndamento : iniciar(guia)\n[etapa inicial]
+
+state "Em andamento" as EmAndamento : mostra a etapa atual\ncom 2 ou 3 opções fixas
+state "Interrompida" as Interrompida : guarda a etapa atual
+state "Concluída" as Concluida : registra a sessão (COMPLETED)
+state "Abandonada" as Abandonada : registra a sessão (ABANDONED)
+
+EmAndamento --> EmAndamento : escolher(opção)\n[próxima etapa não é final]
+EmAndamento --> EmAndamento : prazo da etapa vence\n[vai para a opção padrão]
+EmAndamento --> Concluida : escolher(opção)\n[próxima etapa é final]
+EmAndamento --> Interrompida : pausar()
+Interrompida --> EmAndamento : continuar()
+EmAndamento --> Abandonada : encerrar()
+Interrompida --> Abandonada : encerrar()
+
+Concluida --> [*]
+Abandonada --> [*]
+
+@enduml

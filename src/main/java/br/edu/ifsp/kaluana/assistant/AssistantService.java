@@ -1,6 +1,7 @@
 package br.edu.ifsp.kaluana.assistant;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,6 +65,34 @@ public class AssistantService {
             logger.warn("Assistente indisponível ao sugerir etapas: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                     "O assistente não respondeu agora. Tente de novo em instantes.");
+        }
+    }
+
+    public List<Integer> rankOptions(UUID userId, String question, List<String> options, Integer energyLevel) {
+        List<Integer> defaultOrder = java.util.stream.IntStream.range(0, options.size()).boxed().toList();
+        if (!assistant.isEnabled() || options.size() < 2) {
+            return defaultOrder;
+        }
+        consumeQuota(userId);
+        try {
+            return assistant.rankOptions(question, options, energyLevel);
+        } catch (AssistantUnavailableException e) {
+            logger.warn("Assistente indisponível ao ordenar opções do guia: {}", e.getMessage());
+            return defaultOrder;
+        }
+    }
+
+    public ParsedTaskDTO parseTask(UUID userId, String phrase, LocalDate today) {
+        if (!assistant.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "O assistente está desligado.");
+        }
+        consumeQuota(userId);
+        try {
+            return assistant.parseTask(phrase, today);
+        } catch (AssistantUnavailableException e) {
+            logger.warn("Assistente indisponível ao interpretar frase: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "O assistente não respondeu agora. A tarefa pode ser criada pelas regras.");
         }
     }
 

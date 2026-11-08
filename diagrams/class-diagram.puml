@@ -1,373 +1,236 @@
 @startuml class-diagram
 skinparam classAttributeIconSize 0
-skinparam monochrome false
 skinparam shadowing false
 skinparam linetype polyline
-skinparam nodesep 90
-skinparam ranksep 90
-skinparam packagePadding 20
-skinparam classPadding 8
+skinparam nodesep 35
+skinparam ranksep 55
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+hide empty members
+title Diagrama de classes do domínio (atributos de auditoria omitidos)
 
-package "Identidade e Autenticação" {
-  enum UserRole {
-    PRIMARY
-    RESPONSIBLE
-  }
-
+package "Conta e sessão" {
   class User {
     - id: UUID
     - name: String
     - email: String
     - hashPassword: String
     - role: UserRole
-    - typeSupport: String
     - nickname: String
     - avatarColor: String
     - emailVerified: boolean
-    - createdAt: OffsetDateTime
-    - updatedAt: OffsetDateTime
-    + updateProfile(name: String, nickname: String, avatarColor: String): void
-    + isPrimary(): boolean
-    + isResponsible(): boolean
+    + User(name, email, hashPassword, role)
+    + updateProfile(name, nickname, avatarColor): void
+    + markEmailVerified(): void
   }
-
   class RefreshToken {
     - id: UUID
-    - userId: UUID
     - tokenHash: String
     - expiresAt: OffsetDateTime
     - revokedAt: OffsetDateTime
-    - createdAt: OffsetDateTime
-    + isExpired(now: OffsetDateTime): boolean
-    + isRevoked(): boolean
-    + revoke(now: OffsetDateTime): void
+    + isUsable(now): boolean
+    + revoke(now): void
   }
-
   class EmailVerificationToken {
     - id: UUID
-    - userId: UUID
     - tokenHash: String
     - expiresAt: OffsetDateTime
-    - used: boolean
-    - createdAt: OffsetDateTime
-    + isExpired(now: OffsetDateTime): boolean
-    + markAsUsed(): void
+    - usedAt: OffsetDateTime
+    + isUsable(now): boolean
+    + markUsed(now): void
   }
 }
 
-package "Automonitoramento e Apoio" {
-  enum EventCategory {
-    SOCIAL
-    IMPULSIVIDADE
-    URGENCIA
-    SOBRECARGA
-  }
-
+package "Registro e rotina" {
   class LifeEvent {
     - id: UUID
-    - userId: UUID
     - category: EventCategory
     - note: String
     - urgent: boolean
     - occurredAt: OffsetDateTime
-    - createdAt: OffsetDateTime
-    + markUrgent(urgent: boolean): void
-    + describe(cat: EventCategory, note: String, urgent: boolean, date: OffsetDateTime): void
+    + LifeEvent(userId, category, note, urgent, occurredAt)
   }
-
-  class CheckIn {
-    - id: UUID
-    - userId: UUID
-    - day: LocalDate
-    - level: short
-    - recordedAt: OffsetDateTime
-    + record(level: int): void
-  }
-
-  enum ReminderFrequency {
-    ONCE
-    DAILY
-    WEEKLY
-  }
-
-  enum ReminderInsistence {
-    LOW
-    MEDIUM
-    HIGH
-  }
-
   class Reminder {
     - id: UUID
-    - userId: UUID
     - title: String
     - time: LocalTime
     - leadMinutes: int
     - frequency: ReminderFrequency
     - insistence: ReminderInsistence
     - enabled: boolean
-    - createdAt: OffsetDateTime
-    - updatedAt: OffsetDateTime
-    + configure(title: String, time: LocalTime, lead: int, freq: ReminderFrequency, ins: ReminderInsistence, en: boolean): void
-    + toggleEnabled(): void
+    + configure(title, time, leadMinutes, frequency, insistence, enabled): void
   }
-
-  enum ContactMethod {
-    LIGACAO
-    MENSAGEM
-    WHATSAPP
-    EMAIL
+  class CheckIn {
+    - id: UUID
+    - day: LocalDate
+    - level: short
+    + CheckIn(userId, day)
+    + record(level): void
   }
-
   class TrustedContact {
     - id: UUID
-    - userId: UUID
     - name: String
     - method: ContactMethod
     - value: String
-    - createdAt: OffsetDateTime
-    + update(name: String, method: ContactMethod, val: String): void
+    + update(name, method, value): void
+  }
+  class GuideSession {
+    - id: UUID
+    - guideId: String
+    - guideVersion: int
+    - status: GuideSessionStatus
+    - stepsCount: int
+    - startedAt: OffsetDateTime
+    - finishedAt: OffsetDateTime
+    + GuideSession(userId, guideId, guideVersion, status, stepsCount, startedAt, finishedAt)
   }
 }
 
-package "Gestão de Tarefas e Planejamento" {
-  enum TaskPriority {
-    LOW
-    MEDIUM
-    HIGH
-  }
-
-  enum TaskStatus {
-    TODO
-    DONE
-  }
-
+package "Tarefas e foco" {
   class Task {
     - id: UUID
-    - userId: UUID
     - title: String
     - priority: TaskPriority
     - estimatedMinutes: Integer
     - dueDate: LocalDate
     - status: TaskStatus
-    - completedAt: OffsetDateTime
-    - createdAt: OffsetDateTime
-    - updatedAt: OffsetDateTime
-    + describe(title: String, priority: TaskPriority, minutes: Integer, due: LocalDate): void
-    + markDone(done: boolean): void
-    + addStep(text: String): TaskStep
-    + replaceSteps(steps: List<TaskStepRequestDTO>): void
-    + reschedule(newDate: LocalDate): void
+    + describe(title, priority, estimatedMinutes, dueDate): void
+    + markDone(done): void
+    + reschedule(newDueDate): void
+    + addStep(text): TaskStep
+    + updateStep(stepId, text, done): void
+    + removeStep(stepId): void
   }
-
   class TaskStep {
     - id: UUID
     - text: String
     - position: short
     - done: boolean
-    - createdAt: OffsetDateTime
-    + setDone(done: boolean): void
-    + describe(text: String, pos: short): void
+    ~ TaskStep(task, text, position)
   }
-
-  enum DayPlanSource {
-    RULES
-    ASSISTANT
-  }
-
-  enum BlockKind {
-    TASK
-    BREAK
-  }
-
-  class DayPlan {
-    - id: UUID
-    - userId: UUID
-    - planDate: LocalDate
-    - windowEnd: LocalTime
-    - source: DayPlanSource
-    - energyLevel: Integer
-    - note: String
-    - createdAt: OffsetDateTime
-    - updatedAt: OffsetDateTime
-    + replaceFrom(plan: Plan, source: DayPlanSource, energy: Integer, note: String): void
-    + replan(now: LocalTime): void
-  }
-
-  class PlannedBlock <<Embeddable>> {
-    - position: int
-    - kind: BlockKind
-    - taskId: UUID
-    - title: String
-    - startTime: LocalTime
-    - endTime: LocalTime
-    + isTask(): boolean
-    + durationMinutes(): int
-  }
-
-  class UnscheduledTask <<Embeddable>> {
-    - position: int
-    - taskId: UUID
-    - title: String
-    - minutes: int
-    + getTaskId(): UUID
-    + getMinutes(): int
-  }
-
-  enum DayFeeling {
-    LOW
-    NEUTRAL
-    GOOD
-  }
-
-  class DayReview {
-    - id: UUID
-    - userId: UUID
-    - reviewDate: LocalDate
-    - feeling: DayFeeling
-    - carriedToTomorrow: int
-    - movedToUnscheduled: int
-    - completedCount: int
-    - createdAt: OffsetDateTime
-    - updatedAt: OffsetDateTime
-    + applyDecisions(actions: List<TaskActionDTO>): void
-    + getCarriedToTomorrow(): int
-  }
-}
-
-package "Foco e Bem-Estar Sensorial" {
-  enum TimerSound {
-    NONE
-    WHITE
-    PINK
-    BROWN
-    RAIN
-    WAVES
-    FIRE
-    FOREST
-  }
-
-  enum TimerSessionStatus {
-    DONE
-    CANCELED
-  }
-
   class TimerSession {
     - id: UUID
-    - userId: UUID
-    - taskId: UUID
     - task: String
     - plannedMinutes: int
     - stepsCount: short
     - water: boolean
     - sound: TimerSound
     - status: TimerSessionStatus
-    - startedAt: OffsetDateTime
-    - finishedAt: OffsetDateTime
-    + markDone(finishedAt: OffsetDateTime): void
-    + cancel(finishedAt: OffsetDateTime): void
+    + TimerSession(userId, taskId, task, plannedMinutes, stepsCount, water, sound, status, startedAt, finishedAt)
   }
-
-  enum AmbientMode {
-    RELAX
-    SLEEP
-  }
-
   class AmbientSession {
     - id: UUID
-    - userId: UUID
     - mode: AmbientMode
     - sound: TimerSound
     - plannedMinutes: int
     - status: TimerSessionStatus
-    - startedAt: OffsetDateTime
-    - finishedAt: OffsetDateTime
-    + complete(finishedAt: OffsetDateTime): void
+    + AmbientSession(userId, mode, sound, plannedMinutes, status, startedAt, finishedAt)
   }
 }
 
-package "Consentimento" {
-  class AccessSettings {
-    - userId: UUID
-    - shareEvents: boolean
-    - shareCheckIns: boolean
-    - shareUsage: boolean
-    - shareReports: boolean
-    - updatedAt: OffsetDateTime
-    + update(events: boolean, checkIns: boolean, usage: boolean, reports: boolean): void
+package "Planejamento do dia" {
+  class DayPlan {
+    - id: UUID
+    - planDate: LocalDate
+    - windowEnd: LocalTime
+    - source: Source
+    - energyLevel: Integer
+    + replace(plan, windowEnd, source, energyLevel, note): void
+    + blocksAsPlanned(): List<Block>
+  }
+  class PlannedBlock <<embutido>> {
+    - kind: BlockKind
+    - taskId: UUID
+    - title: String
+    - startTime: LocalTime
+    - endTime: LocalTime
+  }
+  class UnscheduledTask <<embutido>> {
+    - taskId: UUID
+    - title: String
+    - minutes: int
+  }
+  class DayReview {
+    - id: UUID
+    - reviewDate: LocalDate
+    - feeling: DayFeeling
+    - movedTomorrow: int
+    - unscheduled: int
+    - completed: int
+    + record(action: ReviewAction): void
+    + describe(feeling): void
   }
 }
 
-package "Emparelhamento" {
-  enum LinkRelationship {
-    FAMILY
-    HEALTH_PROFESSIONAL
-    OTHER
-  }
-
+package "Vínculo e consentimento" {
   class PairingCode {
     - id: UUID
     - code: String
-    - primaryUserId: UUID
     - expiresAt: OffsetDateTime
     - used: boolean
-    - createdAt: OffsetDateTime
-    + isExpired(now: OffsetDateTime): boolean
     + markAsUsed(): void
   }
-
   class ResponsibleLink {
     - id: UUID
-    - responsibleId: UUID
-    - primaryUserId: UUID
-    - accessLevel: String
     - relationship: LinkRelationship
     - shareEvents: boolean
     - shareCheckIns: boolean
     - shareUsage: boolean
     - shareTasks: boolean
     - shareReports: boolean
-    - createdAt: OffsetDateTime
-    + updatePermissions(permissions: LinkPermissionsDTO): void
-    + isAuthorized(scope: String): boolean
-    + withDefaults(respId: UUID, primId: UUID, defaults: AccessSettings): ResponsibleLink
+    + {static} withDefaults(responsibleId, primaryUserId, defaults): ResponsibleLink
+    + updatePermissions(permissions): void
+    + otherSideOf(userId): UUID
+  }
+  class AccessSettings {
+    - shareEvents: boolean
+    - shareCheckIns: boolean
+    - shareUsage: boolean
+    - shareReports: boolean
+    + {static} nothingSharedFor(userId): AccessSettings
+    + update(events, checkIns, usage, reports): void
+  }
+  class AccessLog {
+    - id: UUID
+    - action: AccessAction
+    - periodDays: int
+    + AccessLog(primaryUserId, viewerId, action, periodDays)
   }
 }
 
-package "Relatório de Acompanhamento" {
-  class FollowUpReport <<ValueObject>> {
-    - periodStart: LocalDate
-    - periodEnd: LocalDate
-    - generatedAt: OffsetDateTime
-    - events: List<LifeEvent>
-    - checkIns: List<CheckIn>
-    - usageMetrics: Map<String, Object>
-    - completedTasks: List<Task>
-    + filterByPermissions(link: ResponsibleLink): FollowUpReport
-    + exportPdf(): byte[]
-  }
-}
+User "1" *-up- "0..*" RefreshToken
+User "1" *-up- "0..*" EmailVerificationToken
 
-User "1" *-left- "0..*" RefreshToken : "FK user_id"
-User "1" *-left- "0..*" EmailVerificationToken : "FK user_id"
+User "1" -left- "0..*" LifeEvent
+User "1" -left- "0..*" Reminder
+User "1" -left- "0..*" CheckIn
+User "1" -left- "0..*" TrustedContact
+User "1" -left- "0..*" GuideSession
+LifeEvent -[hidden]down- Reminder
+Reminder -[hidden]down- CheckIn
+CheckIn -[hidden]down- TrustedContact
+TrustedContact -[hidden]down- GuideSession
 
-User "1" -up-> "0..*" LifeEvent : "FK user_id"
-User "1" -up-> "0..*" CheckIn : "FK user_id"
-User "1" -up-> "0..*" Reminder : "FK user_id"
-User "1" -up-> "0..*" TrustedContact : "FK user_id"
+User "1 (principal)" -down- "0..*" AccessLog
+User "1 (quem viu)" -down- "0..*" AccessLog
+User "1 (principal)" -down- "0..*" ResponsibleLink
+User "1 (responsável)" -down- "0..*" ResponsibleLink
+User "1" -down- "0..*" PairingCode
+User "1" -down- "0..1" AccessSettings
+ResponsibleLink ..> AccessSettings : usa o padrão
 
-User "1" -right-> "0..*" AmbientSession : "FK user_id"
+User "1" -right- "0..*" Task
+Task "1" *-down- "0..*" TaskStep
+User "1" -right- "0..*" TimerSession
+TimerSession "0..*" -down-> "0..1" Task
+User "1" -right- "0..*" AmbientSession
 
-User "1" -down-> "0..*" Task : "FK user_id"
-Task "1" *-right- "0..*" TaskStep : "FK task_id (composição)"
-DayPlan "1" *-down- "0..*" PlannedBlock : "composição interna"
-DayPlan "1" *-down- "0..*" UnscheduledTask : "composição interna"
-DayPlan "0..*" .right.> "0..*" Task : "aloca tarefas"
-DayReview "0..*" .up.> "0..*" Task : "atualiza tarefas do dia"
-TimerSession "0..*" -left-> "0..1" Task : "FK task_id (opcional)"
+User "1" -down- "0..*" DayPlan
+DayPlan "1" *-down- "0..*" PlannedBlock
+DayPlan "1" *-down- "0..*" UnscheduledTask
+User "1" -down- "0..*" DayReview
 
-User "1" -down-> "0..*" PairingCode : "gera código"
-PairingCode -down-> ResponsibleLink : "estabelece vínculo"
-AccessSettings "1" .right.> "0..*" ResponsibleLink : "permissões padrão"
-ResponsibleLink "1" .right.> "0..*" FollowUpReport : "autoriza escopos"
+PlannedBlock ..> Task : referência sem FK
+DayReview ..> Task : decide pendentes
 
 @enduml
