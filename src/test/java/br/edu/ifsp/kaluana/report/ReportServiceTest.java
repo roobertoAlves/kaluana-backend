@@ -14,6 +14,8 @@ import br.edu.ifsp.kaluana.user.UserRepository;
 import br.edu.ifsp.kaluana.ambient.AmbientSessionRepository;
 
 import br.edu.ifsp.kaluana.pairing.PairingService;
+import br.edu.ifsp.kaluana.access.AccessAction;
+import br.edu.ifsp.kaluana.access.AccessLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +31,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -61,6 +64,9 @@ class ReportServiceTest {
     @Mock
     private PairingService pairingService;
 
+    @Mock
+    private AccessLogService accessLogService;
+
     private ReportService reportService;
 
     @BeforeEach
@@ -72,7 +78,8 @@ class ReportServiceTest {
                 timerSessionRepository,
                 taskRepository,
                 ambientSessionRepository,
-                pairingService);
+                pairingService,
+                accessLogService);
     }
 
     @Test
@@ -136,6 +143,29 @@ class ReportServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("1 a 365");
         verify(userRepository, never()).findById(eq(PRIMARY_ID));
+    }
+
+    @Test
+    void registraQuandoOVinculadoVeORelatorio() {
+        when(pairingService.findLink(RESPONSIBLE_ID, PRIMARY_ID))
+                .thenReturn(Optional.of(link(new LinkPermissionsDTO(LinkRelationship.FAMILY, false, true, false, false, true))));
+        when(userRepository.findById(PRIMARY_ID)).thenReturn(Optional.of(user("Maria", UserRole.PRIMARY)));
+        when(userRepository.findById(RESPONSIBLE_ID)).thenReturn(Optional.of(user("Joana", UserRole.RESPONSIBLE)));
+        when(checkInRepository.findByUserIdAndDayGreaterThanEqualOrderByDayAsc(any(), any())).thenReturn(List.of());
+
+        reportService.linkedReport(RESPONSIBLE_ID, PRIMARY_ID, 30);
+
+        verify(accessLogService).record(PRIMARY_ID, RESPONSIBLE_ID, AccessAction.VIEW_REPORT, 30);
+    }
+
+    @Test
+    void naoRegistraExportacaoSemPermissao() {
+        when(pairingService.findLink(RESPONSIBLE_ID, PRIMARY_ID))
+                .thenReturn(Optional.of(link(new LinkPermissionsDTO(LinkRelationship.FAMILY, true, true, true, true, false))));
+
+        assertThatThrownBy(() -> reportService.recordExport(RESPONSIBLE_ID, PRIMARY_ID, 7))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(accessLogService, never()).record(any(), any(), any(), anyInt());
     }
 
     private static ResponsibleLink link(LinkPermissionsDTO permissions) {

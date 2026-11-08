@@ -1,38 +1,22 @@
-# PlantUML System Diagrams
+# Diagramas do Kaluanã
 
-This directory contains the PlantUML (`.puml`) source files modeling the Kaluanã platform.
+Fontes em PlantUML (`.puml`) e as imagens geradas em `png/`. Todos foram conferidos com o código e com as migrações do banco (`V1` a `V18`).
 
-## Diagrams Included
+| Arquivo | O que mostra |
+| --- | --- |
+| `use-case-diagram.puml` | Casos de uso por área (registro e rotina, tarefas e foco, planejamento, vínculo e relatório), com os atores Usuário, Responsável ou profissional e Assistente de IA (opcional). |
+| `class-diagram.puml` | Entidades e métodos reais. As linhas cheias são chaves estrangeiras do banco; as tracejadas são dependências sem chave estrangeira (por exemplo, `PlannedBlock` guarda o id da tarefa dentro do plano). |
+| `architecture-diagram.puml` | Aplicativo (Expo, axios), Caddy, API Spring Boot, PostgreSQL, Redis, SMTP e o assistente de IA opcional. |
+| `focus-session-state-diagram.puml` | Estados da sessão de foco (RF9). |
+| `guide-session-state-diagram.puml` | Estados da sessão do guia de autorregulação (RF13). |
+| `replanning-activity-diagram.puml` | Atividades do replanejamento do dia (RF14). |
 
-1. `class-diagram.puml`
-   - High-cohesion domain model structured into logical packages (`Identity & Access`, `Pairing & Delegation`, `Daily Planning & Tasks`, `Focus & Sensory Support`, `Self-Monitoring & Support`).
-   - Reflects actual PostgreSQL foreign keys from Flyway migrations (`V1`..`V13`).
-   - Weak dependencies explicitly identified (e.g., `PlannedBlock` referencing `Task` without database FK constraint).
-   - Eliminates misplaced methods and empty classes from legacy models.
+## Como gerar as imagens
 
-2. `use-case-diagram.puml`
-   - Subsystem-partitioned use cases cleanly separating Primary User (ADHD individual), Responsible/Professional, and AI Assistant Service.
-   - Standardized `<<extend>>`, `<<include>>`, and direct actor associations.
+Com Docker:
 
-3. `architecture-diagram.puml`
-   - Layered architecture: Mobile Client (React Native/Expo + Axios), Security/Filter Layer, Backend Core (Spring Boot), Relational DB (PostgreSQL 16), Cache/Rate Limiting (Redis 7), and External Services.
-
-4. `focus-session-state-diagram.puml`
-   - State transition diagram for the focus timer (`IDLE`, `RUNNING`, `PAUSED`, `COMPLETED`, `CANCELED`).
-
-5. `replanning-activity-diagram.puml`
-   - Activity workflow detailing deterministic schedule recalculation, block shifting, overflow detection, and user notification.
-
-## How to Render
-
-### Option 1: PlantUML CLI / Jar
 ```bash
-java -jar plantuml.jar *.puml
+docker run --rm -e PLANTUML_LIMIT_SIZE=16384 -v "$PWD/diagrams:/data" plantuml/plantuml:latest -tpng -charset UTF-8 -o /data/png /data/*.puml
 ```
 
-### Option 2: VS Code / IDE Plugin
-- Install the **PlantUML** extension (`jebbs.plantuml`).
-- Open any `.puml` file and press `Alt + D` to preview.
-
-### Option 3: Online PlantUML Server
-- Copy and paste the contents into [PlantText](https://www.planttext.com/) or the official [PlantUML Web Server](http://www.plantuml.com/plantuml/uml/).
+Ou pela extensão PlantUML do VS Code (`jebbs.plantuml`), abrindo o arquivo e usando `Alt + D`.
