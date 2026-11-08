@@ -74,6 +74,16 @@ package "Registro e rotina" {
     - value: String
     + update(name, method, value): void
   }
+  class GuideSession {
+    - id: UUID
+    - guideId: String
+    - guideVersion: int
+    - status: GuideSessionStatus
+    - stepsCount: int
+    - startedAt: OffsetDateTime
+    - finishedAt: OffsetDateTime
+    + GuideSession(userId, guideId, guideVersion, status, stepsCount, startedAt, finishedAt)
+  }
 }
 
 package "Tarefas e foco" {
@@ -180,6 +190,12 @@ package "Vínculo e consentimento" {
     + {static} nothingSharedFor(userId): AccessSettings
     + update(events, checkIns, usage, reports): void
   }
+  class AccessLog {
+    - id: UUID
+    - action: AccessAction
+    - periodDays: int
+    + AccessLog(primaryUserId, viewerId, action, periodDays)
+  }
 }
 
 User "1" *-up- "0..*" RefreshToken
@@ -189,9 +205,11 @@ User "1" -left- "0..*" LifeEvent
 User "1" -left- "0..*" Reminder
 User "1" -left- "0..*" CheckIn
 User "1" -left- "0..*" TrustedContact
+User "1" -left- "0..*" GuideSession
 LifeEvent -[hidden]down- Reminder
 Reminder -[hidden]down- CheckIn
 CheckIn -[hidden]down- TrustedContact
+TrustedContact -[hidden]down- GuideSession
 
 User "1 (principal)" -down- "0..*" ResponsibleLink
 User "1 (responsável)" -down- "0..*" ResponsibleLink
@@ -199,6 +217,9 @@ User "1" -down- "0..*" PairingCode
 User "1" -down- "0..1" AccessSettings
 PairingCode -[hidden]right- ResponsibleLink
 ResponsibleLink ..> AccessSettings : usa o padrão
+User "1 (principal)" -down- "0..*" AccessLog
+User "1 (quem viu)" -down- "0..*" AccessLog
+AccessSettings -[hidden]right- AccessLog
 
 User "1" -right- "0..*" Task
 Task "1" *-down- "0..*" TaskStep

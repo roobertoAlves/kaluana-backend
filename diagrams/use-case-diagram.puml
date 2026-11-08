@@ -3,12 +3,6 @@ left to right direction
 skinparam shadowing false
 skinparam packageStyle rectangle
 skinparam defaultFontSize 13
-skinparam usecase {
-  BackgroundColor<<planejado>> White
-  BorderColor<<planejado>> Gray
-  FontColor<<planejado>> Gray
-  BorderStyle<<planejado>> dashed
-}
 title Diagrama de casos de uso
 
 actor "Usuário\n(pessoa com TDAH)" as Usuario
@@ -38,7 +32,7 @@ rectangle "Kaluanã" {
     usecase "Pedir sugestão ao\nassistente (RF11)" as UC11
     usecase "Replanejar o dia (RF14)" as UC14
     usecase "Revisar o fim do dia (RF17)" as UC17
-    usecase "Seguir o guia de\nautorregulação (RF13)" as UC13 <<planejado>>
+    usecase "Seguir o guia de\nautorregulação (RF13)" as UC13
   }
 
   package "Vínculo e relatório" {
@@ -71,5 +65,6 @@ UC11 -- IA
 UC15 .> UC5 : <<extend>>
 UC11 .up.> UC10 : <<extend>>
 UC14 .> UC10 : <<extend>>
+UC19 .> UC8 : <<extend>>
 
 @enduml
