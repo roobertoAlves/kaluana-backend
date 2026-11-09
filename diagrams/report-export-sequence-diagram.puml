@@ -1,0 +1,71 @@
+@startuml report-export-sequence-diagram
+skinparam shadowing false
+skinparam defaultFontSize 13
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam BoxPadding 8
+skinparam sequence {
+  ArrowColor #1F3556
+  LifeLineBorderColor #B8B0A5
+  ParticipantBorderColor #1F3556
+  ParticipantBackgroundColor #FFFFFF
+  BoxBorderColor #B8B0A5
+  GroupBorderColor #C95D2B
+  GroupHeaderFontColor #C95D2B
+}
+title Exportar relatório em PDF (RF7) com registro do acesso (RF8)
+
+actor "Responsável ou\nprofissional" as R
+box "Aplicativo (React Native + Expo)" #F6F1EA
+  participant "ReportScreen" as RS
+  participant "reportsApi\n(axios + interceptadores)" as AX
+  participant "reportPdf\n(expo-print)" as PDF
+end box
+box "API (Spring Boot)" #EAF1EC
+  participant "RateLimitFilter\nJwtAuthenticationFilter" as F
+  participant "ReportController" as RC
+  participant "ReportService" as SV
+  participant "PairingService" as PS
+  participant "AccessLogService" as AL
+end box
+database "PostgreSQL" as DB
+
+R -> RS : escolhe a pessoa e o período
+RS -> AX : fetchLinkedReport(pessoa, dias)
+AX -> F : GET /api/reports/linked/{id}?days=30\nAuthorization: Bearer <token>
+F -> F : limite por IP (Redis)\ne valida o JWT
+F -> RC : usuário autenticado
+RC -> RC : @PreAuthorize RESPONSIBLE
+RC -> SV : linkedReport(responsável, principal, dias)
+SV -> PS : findLink(responsável, principal)
+PS -> DB : SELECT responsible_links
+DB --> PS : vínculo
+alt sem vínculo ou relatório não liberado
+  SV --> RC : 404 ou 403
+  RC --> AX : erro com mensagem
+  AX --> RS : mostra o motivo
+else relatório liberado
+  SV -> DB : consulta só as seções liberadas
+  SV -> AL : record(VIEW_REPORT)
+  AL -> DB : INSERT access_logs
+  SV --> RC : ReportResponseDTO
+  RC --> AX : 200 JSON
+  AX --> RS : relatório
+end
+
+R -> RS : Exportar PDF
+RS -> PDF : monta o HTML e gera o PDF no aparelho
+PDF --> R : compartilhar o arquivo
+RS -> AX : recordReportExport(pessoa, dias)
+AX -> RC : POST /api/reports/linked/{id}/export
+RC -> SV : recordExport(...)
+SV -> PS : confere de novo o vínculo e a liberação
+SV -> AL : record(EXPORT_PDF)
+AL -> DB : INSERT access_logs
+RC --> AX : 204
+
+note over AX
+  Se o token expirar (401), o interceptador
+  renova a sessão uma vez e repete o pedido.
+end note
+@enduml
