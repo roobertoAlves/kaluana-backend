@@ -10,6 +10,7 @@ Fontes em PlantUML (`.puml`) e as imagens geradas em `png/`. Todos foram conferi
 | `focus-session-state-diagram.puml` | Estados da sessão de foco (RF9). |
 | `guide-session-state-diagram.puml` | Estados da sessão do guia de autorregulação (RF13). |
 | `replanning-activity-diagram.puml` | Atividades do replanejamento do dia (RF14). |
+| `report-export-sequence-diagram.puml` | Sequência da exportação do relatório em PDF (RF7), com a autorização por vínculo e o registro do acesso (RF8). |
 
 ## Como gerar as imagens
 
